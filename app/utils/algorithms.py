@@ -73,10 +73,28 @@ def a_star_search(graph, cities_df, start, end):
     
     return None, float('inf')
 
-def fuzzy_search(graph, cities_df, start, end, r):
-    """Implementa a busca fuzzy com base na distância."""
+def fuzzy_search(graph, cities_df, start, end, r=None, d=None):
+    """Implementa a busca fuzzy com base na distância.
+    
+    Args:
+        graph: Grafo NetworkX contendo as cidades e conexões
+        cities_df: DataFrame com dados das cidades
+        start: Cidade de origem
+        end: Cidade de destino
+        r: Raio máximo em graus (opcional)
+        d: Distância máxima em km (opcional)
+    
+    Returns:
+        path: Lista de cidades no caminho encontrado
+        distance: Distância total do caminho
+        certainty: Grau de certeza da solução (entre 0 e 1)
+    """
     if start not in graph or end not in graph:
         return None, float('inf'), 0
+    
+    # Determinar o tipo de distância a ser usado (usar km se disponível)
+    use_km = d is not None
+    max_distance = d if use_km else r
     
     # Função de pertinência fuzzy - quanto menor a distância, maior a certeza
     def membership_function(distance, max_distance):
@@ -105,15 +123,25 @@ def fuzzy_search(graph, cities_df, start, end, r):
         for neighbor in graph.neighbors(current):
             if neighbor in closed_set:
                 continue
+            
+            # Pegar a distância correta (km ou euclidiana) da aresta
+            if use_km and 'km_dist' in graph[current][neighbor]:
+                edge_dist = graph[current][neighbor]['km_dist']
+            else:
+                edge_dist = graph[current][neighbor]['weight']
                 
-            edge_dist = graph[current][neighbor]['weight']
             tentative_g = g + edge_dist
             
-            # Calcular certeza da conexão baseada na distância relativa ao raio
-            edge_certainty = membership_function(edge_dist, r)
+            # Calcular certeza da conexão baseada na distância relativa ao raio/distância máxima
+            edge_certainty = membership_function(edge_dist, max_distance)
             new_certainty = min(certainty, edge_certainty)
             
-            h = calculate_distance_from_df(cities_df, neighbor, end)
+            # Usar a distância em km como heurística se estiver disponível
+            if use_km:
+                h = calculate_haversine_distance_from_df(cities_df, neighbor, end)
+            else:
+                h = calculate_distance_from_df(cities_df, neighbor, end)
+                
             f = tentative_g + h * (1 - new_certainty * 0.5)  # Quanto menor a certeza, maior o foco na heurística
             
             heapq.heappush(open_list, (f, neighbor, path + [neighbor], tentative_g, new_certainty))
@@ -146,3 +174,25 @@ def calculate_distance_from_df(cities_df, city1_name, city2_name):
                               (city1['longitude'] - city2['longitude'])**2)
     
     return distance_degrees
+
+def calculate_haversine_distance_from_df(cities_df, city1_name, city2_name):
+    """Calcula a distância usando a fórmula de Haversine a partir dos nomes das cidades no DataFrame."""
+    city1 = cities_df[cities_df['city'] == city1_name].iloc[0]
+    city2 = cities_df[cities_df['city'] == city2_name].iloc[0]
+    
+    # Raio da Terra em km
+    R = 6371.0  
+    
+    lat1_rad = math.radians(city1['latitude'])
+    lon1_rad = math.radians(city1['longitude'])
+    lat2_rad = math.radians(city2['latitude'])
+    lon2_rad = math.radians(city2['longitude'])
+    
+    dlon = lon2_rad - lon1_rad
+    dlat = lat2_rad - lat1_rad
+    
+    a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    distance_km = R * c
+    
+    return distance_km
