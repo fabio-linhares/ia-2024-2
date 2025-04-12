@@ -1,16 +1,135 @@
+:root {
+    --main-bg-color: #121212;
+    --main-text-color: #f0f0f0;
+    --accent-color: #6D28D9;
+    --secondary-color: #34D399;
+    --danger-color: #EF4444;
+    --warning-color: #F59E0B;
+    --success-color: #10B981;
+    --card-bg-color: #1E1E1E;
+    --border-radius: 10px;
+}
+
 .stApp {
-    background-color: #f0f2f6;
+    background-color: var(--main-bg-color);
+    color: var(--main-text-color);
 }
 
-.stButton>button {
-    color: #4F8BF9;
-    border-color: #4F8BF9;
+/* Sidebar styling */
+.css-1d391kg, .css-12oz5g7 {
+    background-color: #18181B;
 }
 
-.stTextInput>div>div>input {
-    border-color: #4F8BF9;
+/* Button styling */
+.stButton > button {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 0.5rem 1.25rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
 }
 
-.stNumberInput>div>div>input {
-    border-color: #4F8BF9;
+.stButton > button:hover {
+    background-color: #5B21B6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(109, 40, 217, 0.3);
+}
+
+/* Input fields */
+.stTextInput > div > div > input,
+.stNumberInput > div > div > input,
+.stSelectbox > div > div > div {
+    border-radius: var(--border-radius);
+    border: 1px solid #4B5563;
+    background-color: #2D3748;
+    color: var(--main-text-color);
+}
+
+/* Cards and containers */
+.stExpander, [data-testid="stExpander"] {
+    background-color: var(--card-bg-color);
+    border-radius: var(--border-radius);
+    border: 1px solid #374151;
+    overflow: hidden;
+}
+
+/* Headers styling */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--main-text-color);
+    font-weight: bold;
+}
+
+h1 {
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 0.5rem;
+}
+
+/* Info boxes */
+.stAlert, [data-baseweb="notification"] {
+    border-radius: var(--border-radius);
+}
+
+/* Modern tabs */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background-color: #2D3748;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    border: 1px solid #4B5563;
+    border-bottom: none;
+    padding: 8px 16px;
+    color: var(--main-text-color);
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+    font-weight: bold;
+}
+
+/* Progress bar */
+.stProgress > div > div > div {
+    background-color: var(--accent-color);
+}
+
+/* Logo styling */
+.logo-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.logo-image {
+    height: 60px;
+    width: auto;
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--main-text-color);
+}
+
+/* Card styling for history */
+.history-card {
+    background-color: var(--card-bg-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--accent-color);
+}
+
+/* Map container */
+.map-container {
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 1px solid #4B5563;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
