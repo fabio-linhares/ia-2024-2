@@ -71,11 +71,11 @@ with st.sidebar:
     st.markdown("**Hans Ponfick de Aragão Lisboa Neto**")
     st.markdown("**Luryan Delevati Dorneles**")
     st.markdown("## Versão")
-    st.markdown("**v0.1**")
+    st.markdown("**v1.0**")
     st.markdown("## Data")
     st.markdown("**2025-12-04**")
     st.markdown("## Repositório")
-    st.markdown("## https://github.com/fabio-linhares/ia-2024-2.git")
+    st.markdown("https://github.com/fabio-linhares/ia-2024-2.git")
              
     st.markdown("---")
     
