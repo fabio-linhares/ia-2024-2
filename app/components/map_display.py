@@ -123,21 +123,32 @@ def display_route_map(cities_df, paths):
         st.error(f"Erro ao criar o mapa: {str(e)}")
         st.write("Dados utilizados:", cities_df.head())
         
-def display_graph_visualization(G, cities_df, r):
+def display_graph_visualization(G, cities_df, r=None, d=None):
     """
     Visualiza o grafo de conexões entre cidades.
     
     Args:
         G: Grafo NetworkX das conexões entre cidades
         cities_df: DataFrame com as informações das cidades
-        r: Raio de conexão utilizado
+        r: Raio de conexão em graus (opcional)
+        d: Distância máxima em km (opcional)
         
     Returns:
         Objeto figura do matplotlib com a visualização do grafo
     """
     fig, ax = plt.subplots(figsize=(12, 8))
     
-    plt.title(f"Grafo de Conexões entre Cidades (raio r = {r})")
+    # Determinar o título baseado nos parâmetros fornecidos
+    if r is not None and d is not None:
+        title = f"Grafo de Conexões entre Cidades (r = {r} graus, d = {d} km)"
+    elif r is not None:
+        title = f"Grafo de Conexões entre Cidades (raio r = {r} graus)"
+    elif d is not None:
+        title = f"Grafo de Conexões entre Cidades (distância máxima = {d} km)"
+    else:
+        title = "Grafo de Conexões entre Cidades"
+        
+    plt.title(title)
     plt.xlabel("Longitude")
     plt.ylabel("Latitude")
     
@@ -179,10 +190,19 @@ def display_graph_visualization(G, cities_df, r):
     
     # Desenhar as arestas com transparência proporcional à distância
     edge_alphas = []
+    
+    # Determinar o divisor para calcular alpha (usar o valor apropriado conforme disponibilidade)
+    max_distance = r if r is not None else (d if d is not None else 1.0)
+    distance_type = 'weight' if r is not None else 'km_dist'
+    
     for u, v, data in G.edges(data=True):
         # Arestas mais curtas são mais visíveis
-        weight = data.get('weight', 1.0)
-        alpha = max(0.1, min(0.8, 1.0 - weight/r))
+        if distance_type == 'km_dist' and 'km_dist' in data:
+            weight = data.get('km_dist', 1.0)
+        else:
+            weight = data.get('weight', 1.0)
+            
+        alpha = max(0.1, min(0.8, 1.0 - weight/max_distance))
         edge_alphas.append(alpha)
         
     nx.draw_networkx_edges(G, pos, width=1, alpha=edge_alphas, ax=ax)
