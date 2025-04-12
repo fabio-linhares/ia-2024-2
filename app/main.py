@@ -64,13 +64,19 @@ with st.sidebar:
     st.markdown("**Disciplina: Inteligência Artificial**")
     st.markdown("**Atividade Avaliativa B1**")
     st.markdown("## Professores")
-    st.markdown("**Dr. Glauber Rocha**")
-    st.markdown("**Dr. Evandro Mesquitaa**")
+    st.markdown("**Dr. Glauber Rodrigues Leite**")
+    st.markdown("**Dr. Evandro De Barros Costa**")
     st.markdown("## Alunos")
     st.markdown("**Fábio Linhares**")
-    st.markdown("**Hans Ponfick de Aragão**")
-    st.markdown("**Lurian Delevati**")
-
+    st.markdown("**Hans Ponfick de Aragão Lisboa Neto**")
+    st.markdown("**Luryan Delevati Dorneles**")
+    st.markdown("## Versão")
+    st.markdown("**v0.1**")
+    st.markdown("## Data")
+    st.markdown("**2025-12-04**")
+    st.markdown("## Repositório")
+    st.markdown("## https://github.com/fabio-linhares/ia-2024-2.git")
+             
     st.markdown("---")
     
     selected = option_menu(

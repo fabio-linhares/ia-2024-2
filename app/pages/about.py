@@ -89,13 +89,13 @@ def app():
         
         **Disciplina**: Inteligência Artificial  
         **Professores**: 
-        - Dr. Glauber Rocha
-        - Dr. Evandro Mesquitaa
+        - Dr. Glauber Rodrigues Leite
+        - Dr. Evandro De Barros Costa
         
         ### Alunos
         Fábio Linhares  
-        Hans Ponfick de Aragão  
-        Lurian Delevati
+        Hans Ponfick de Aragão Lisboa Neto  
+        Luryan Delevati Dorneles
         
         """)
     
@@ -116,4 +116,4 @@ def app():
     
     # Footer
     st.markdown("---")
-    st.markdown("© 2025 Fábio Linhares, Hans Ponfick de Aragão e Lurian Delevti | PPGI-UFAL | City Router v1.0")
+    st.markdown("© 2025 Fábio Linhares, Hans Ponfick de Aragão e Luryan Delevati | PPGI-UFAL | City Router v1.0")
