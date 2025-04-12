@@ -84,14 +84,19 @@ def app():
         ### Universidade Federal de Alagoas (UFAL)
         Programa de Pós-Graduação em Informática (PPGI)
         Instituto de Computação (IC)
+                    
+        ### Atividade Avaliativa B1
         
         **Disciplina**: Inteligência Artificial  
         **Professores**: 
         - Dr. Glauber Rocha
-        - Dr. Evandro
+        - Dr. Evandro Mesquitaa
         
-        **Aluno**: Fábio Linhares  
-        **Atividade**: Avaliativa B1
+        ### Alunos
+        Fábio Linhares  
+        Hans Ponfick de Aragão  
+        Lurian Delevati
+        
         """)
     
     # Referências
@@ -111,4 +116,4 @@ def app():
     
     # Footer
     st.markdown("---")
-    st.markdown("© 2025 Fábio Linhares | PPGI-UFAL | City Router v1.0")
+    st.markdown("© 2025 Fábio Linhares, Hans Ponfick de Aragão e Lurian Delevti | PPGI-UFAL | City Router v1.0")
