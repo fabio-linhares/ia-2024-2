@@ -2,8 +2,20 @@ import networkx as nx
 import math
 import pandas as pd
 
-def build_graph(cities_df, r):
-    """Constrói o grafo a partir dos dados das cidades."""
+def build_graph(cities_df, r=None, d=None):
+    """Constrói o grafo a partir dos dados das cidades.
+    
+    Args:
+        cities_df: DataFrame com dados das cidades
+        r: Raio máximo de conexão em graus (distância euclidiana)
+        d: Distância máxima em quilômetros (usando Haversine)
+        
+    Pelo menos um dos parâmetros r ou d deve ser fornecido.
+    Se ambos forem fornecidos, uma conexão é criada apenas se satisfizer ambas as condições.
+    """
+    if r is None and d is None:
+        raise ValueError("Pelo menos um dos parâmetros r ou d deve ser fornecido")
+        
     G = nx.Graph()
 
     # Adicionar nós
@@ -15,10 +27,24 @@ def build_graph(cities_df, r):
     for i, city1 in cities_df.iterrows():
         for j, city2 in cities_df.iterrows():
             if i != j:
-                dist = calculate_distance(city1, city2)
-                if dist <= r:
-                    # Adicionar aresta se a distância é menor ou igual ao raio
-                    G.add_edge(city1['city'], city2['city'], weight=dist)
+                # Calcular distâncias
+                euclidian_dist = calculate_distance(city1, city2)
+                km_dist = calculate_haversine_distance(city1, city2)
+                
+                # Verificar condições de conexão
+                connect = True
+                if r is not None and euclidian_dist > r:
+                    connect = False
+                if d is not None and km_dist > d:
+                    connect = False
+                
+                if connect:
+                    # Decidir qual peso usar para a aresta (priorizando km se disponível)
+                    weight = km_dist if d is not None else euclidian_dist
+                    G.add_edge(city1['city'], city2['city'], 
+                               weight=weight, 
+                               euclidian_dist=euclidian_dist,
+                               km_dist=km_dist)
 
     return G
 
