@@ -1,0 +1,10 @@
+streamlit
+pandas
+numpy
+matplotlib
+networkx
+streamlit-folium
+tqdm
+python-dotenv
+folium
+streamlit-option-menu

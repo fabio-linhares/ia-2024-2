@@ -1,0 +1,16 @@
+name: city_router
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - streamlit
+  - pandas
+  - numpy
+  - matplotlib
+  - networkx
+  - streamlit-folium
+  - tqdm
+  - python-dotenv
+  - folium
+  - pip:
+    - streamlit-option-menu
