@@ -3,17 +3,19 @@
 Este repositório contém a solução para a atividade avaliativa de *Problem Solving* do PPGI008 – Inteligência Artificial, da UFAL. A proposta consiste em encontrar a rota com menor distância acumulada entre duas cidades, considerando que a existência de uma estrada é definida pela distância euclidiana entre elas (dentro de um parâmetro "r"). Em caso de empate entre rotas, é utilizada a regra de priorizar cidades com menor população.
 
 ## Sumário
-- [Introdução](#introdução)
-- [Modelagem](#modelagem)
-- [Implementação](#implementação)
-  - [Algoritmos de Busca](#algoritmos-de-busca)
-  - [Estrutura do Projeto](#estrutura-do-projeto)
-- [Resultados](#resultados)
-- [Conclusão e Limitações](#conclusão-e-limitações)
-- [Instruções de Uso](#instruções-de-uso)
-- [Dependências](#dependências)
-- [Relatórios](#relatórios)
-- [Anexos](#anexos)
+- [Problem Solving: City Route Finder](#problem-solving-city-route-finder)
+  - [Sumário](#sumário)
+  - [Introdução](#introdução)
+  - [Modelagem](#modelagem)
+    - [PEAS](#peas)
+    - [Espaço de Estados, Ações e Função de Transição](#espaço-de-estados-ações-e-função-de-transição)
+  - [Implementação](#implementação)
+    - [Estrutura do Projeto](#estrutura-do-projeto)
+  - [Resultados](#resultados)
+  - [Conclusão e Limitações](#conclusão-e-limitações)
+  - [Instruções de Uso](#instruções-de-uso)
+  - [Dependências](#dependências)
+  - [Relatórios](#relatórios)
 
 ## Introdução
 
