@@ -1,0 +1,16 @@
+.stApp {
+    background-color: #f0f2f6;
+}
+
+.stButton>button {
+    color: #4F8BF9;
+    border-color: #4F8BF9;
+}
+
+.stTextInput>div>div>input {
+    border-color: #4F8BF9;
+}
+
+.stNumberInput>div>div>input {
+    border-color: #4F8BF9;
+}
