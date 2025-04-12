@@ -108,33 +108,78 @@ def app():
     
     # Seletor de algoritmo e raio com explicações
     st.write("### Parâmetros do algoritmo")
+    
+    # Adicionar opção para escolher o tipo de conexão
+    connection_type = st.radio(
+        "Tipo de conexão",
+        ["Raio em graus (r)", "Distância em km (d)", "Ambos"],
+        help="Escolha o tipo de restrição para conexões entre cidades"
+    )
+    
     col1, col2 = st.columns(2)
     with col1:
-        r = st.slider(
-            "Raio de conexão (r)", 
-            min_value=1.0, 
-            max_value=20.0, 
-            value=min(10.0, dist_direta / 3),
-            step=0.5,
-            help="Define a distância máxima para conexão direta entre cidades. Um valor menor força o algoritmo a passar por mais cidades intermediárias."
-        )
-    
+        if connection_type in ["Raio em graus (r)", "Ambos"]:
+            r = st.slider(
+                "Raio de conexão (r)", 
+                min_value=1.0, 
+                max_value=20.0, 
+                value=min(10.0, dist_direta / 3),
+                step=0.5,
+                help="Define a distância máxima em graus para conexão direta entre cidades."
+            )
+        else:
+            r = None
+            
     with col2:
-        algorithm_choice = st.selectbox(
-            "Algoritmo de busca", 
-            ["Todos", "BFS (Busca em Largura)", "A* (A-Estrela)", "Busca Fuzzy"],
-            help="""
-            - BFS: Encontra o caminho com menor número de cidades intermediárias
-            - A*: Encontra o caminho mais curto em termos de distância
-            - Fuzzy: Lida com incertezas nas conexões e pode encontrar rotas alternativas
-            """
-        )
+        if connection_type in ["Distância em km (d)", "Ambos"]:
+            # Converter valor em graus para km para um valor padrão inicial
+            default_d_value = min(1000.0, dist_haversine / 3)
+            d = st.slider(
+                "Distância máxima em km (d)", 
+                min_value=100.0, 
+                max_value=3000.0, 
+                value=default_d_value,
+                step=50.0,
+                help="Define a distância máxima em quilômetros para conexão direta entre cidades."
+            )
+        else:
+            d = None
+            
+    with st.expander("ℹ️ Sobre os parâmetros de conexão"):
+        st.markdown("""
+        - **Raio em graus (r)**: Usa a distância euclidiana entre as coordenadas (em graus). 
+          Valores típicos variam de 1 a 20.
+        - **Distância em km (d)**: Usa a distância real em quilômetros (fórmula de Haversine). 
+          Mais intuitiva e precisa para distâncias reais.
+        - **Ambos**: Cria conexão apenas se ambas as condições forem satisfeitas.
+        """)
+    
+    algorithm_choice = st.selectbox(
+        "Algoritmo de busca", 
+        ["Todos", "BFS (Busca em Largura)", "A* (A-Estrela)", "Busca Fuzzy"],
+        help="""
+        - BFS: Encontra o caminho com menor número de cidades intermediárias
+        - A*: Encontra o caminho mais curto em termos de distância
+        - Fuzzy: Lida com incertezas nas conexões e pode encontrar rotas alternativas
+        """
+    )
 
     # Botão para encontrar a rota com explicação detalhada
     if st.button("🔍 Encontrar Rota", help="Calcula a melhor rota entre as cidades selecionadas"):
         with st.spinner("Calculando a melhor rota... Este processo pode levar alguns segundos dependendo do número de cidades."):
-            # Construir o grafo
-            G = graph_utils.build_graph(cities_df, r)
+            # Construir o grafo com base no tipo de conexão escolhido
+            G = graph_utils.build_graph(cities_df, r=r, d=d)
+            
+            # Mostrar informações sobre o tipo de conexão utilizado
+            connection_info = ""
+            if connection_type == "Raio em graus (r)":
+                connection_info = f"Conexões baseadas em raio de {r} graus"
+            elif connection_type == "Distância em km (d)":
+                connection_info = f"Conexões baseadas em distância máxima de {d} km"
+            else:  # Ambos
+                connection_info = f"Conexões baseadas em raio de {r} graus E distância máxima de {d} km"
+            
+            st.write(f"**Tipo de conexão utilizado:** {connection_info}")
             
             # Visualizar o grafo
             st.subheader("Visualização do Grafo")
@@ -147,7 +192,7 @@ def app():
             Um grafo mais denso (com mais conexões) facilita encontrar caminhos, mas pode aumentar o tempo de processamento.
             """)
             
-            fig = map_display.display_graph_visualization(G, cities_df, r)
+            fig = map_display.display_graph_visualization(G, cities_df, r=r, d=d)
             st.pyplot(fig)
             
             # Estatísticas do grafo
@@ -197,7 +242,7 @@ def app():
             
             if algorithm_choice in ["Todos", "Busca Fuzzy"]:
                 progress_bar.update_progress(0.75, "Executando Busca Fuzzy...")
-                fuzzy_path, fuzzy_distance, fuzzy_certainty = algorithms.fuzzy_search(G, cities_df, start_city, end_city, r)
+                fuzzy_path, fuzzy_distance, fuzzy_certainty = algorithms.fuzzy_search(G, cities_df, start_city, end_city, r=r, d=d)
             
             progress_bar.update_progress(1.0, "Concluído!")
 
