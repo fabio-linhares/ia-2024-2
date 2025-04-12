@@ -59,14 +59,18 @@ with st.sidebar:
     logo_html += """</div>"""
     st.markdown(logo_html, unsafe_allow_html=True)
     
-    st.markdown("### PPGI-UFAL")
+    st.markdown("## PPGI-UFAL")
     st.markdown("**Mestrado em Informática - UFAL**")
     st.markdown("**Disciplina: Inteligência Artificial**")
-    st.markdown("**Professores: Dr. Glauber Rocha & Dr. Evandro**")
-    st.markdown("**Alunos: Fábio Linhares**")
-    st.markdown("**Alunos: Hans Ponfick de Aragão**")
-    st.markdown("**Alunos: Lurian Delevatti**")
     st.markdown("**Atividade Avaliativa B1**")
+    st.markdown("## Professores")
+    st.markdown("**Dr. Glauber Rocha**")
+    st.markdown("**Dr. Evandro Mesquitaa**")
+    st.markdown("## Alunos")
+    st.markdown("**Fábio Linhares**")
+    st.markdown("**Hans Ponfick de Aragão**")
+    st.markdown("**Lurian Delevati**")
+
     st.markdown("---")
     
     selected = option_menu(
