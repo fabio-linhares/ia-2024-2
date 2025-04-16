@@ -58,7 +58,7 @@ def app():
     # Informações institucionais
     st.markdown("## Informações Institucionais")
     
-    col1, col2 = st.columns([1, 2])
+    col1 = st.columns(1)[0] 
     
     with col1:
         # Tentar carregar logos se existirem
@@ -75,11 +75,10 @@ def app():
             return False
         
         # Exibir os logos disponíveis
-        display_logo("ufal") or st.markdown("### UFAL")
-        display_logo("ic") or st.markdown("### Instituto de Computação")
-        display_logo("ppgi") or st.markdown("### PPGI-UFAL")
-    
-    with col2:
+        #display_logo("ufal") or st.markdown("### UFAL")
+        #display_logo("ic") or st.markdown("### Instituto de Computação")
+        #display_logo("ppgi") or st.markdown("### PPGI-UFAL")
+
         st.markdown("""
         ### Universidade Federal de Alagoas (UFAL)
         Programa de Pós-Graduação em Informática (PPGI)
@@ -92,12 +91,10 @@ def app():
         - Dr. Glauber Rodrigues Leite
         - Dr. Evandro De Barros Costa
         
-        ### Alunos
+        ### Aluno
         Fábio Linhares  
-        Hans Ponfick de Aragão Lisboa Neto  
-        Luryan Delevati Dorneles
-        
         """)
+    
     
     # Referências
     st.markdown("""
@@ -112,8 +109,17 @@ def app():
     4. NetworkX documentation: https://networkx.org/
     
     5. Streamlit documentation: https://docs.streamlit.io/
+
+    ## Repositório
+    
+    1. https://github.com/fabio-linhares/ia-2024-2.git   
+
     """)
     
     # Footer
     st.markdown("---")
-    st.markdown("© 2025 Fábio Linhares, Hans Ponfick de Aragão e Luryan Delevati | PPGI-UFAL | City Router v1.0")
+    st.markdown("© 2025 Fábio Linhares | PPGI-UFAL | City Router | v1.0")
+
+
+
+
