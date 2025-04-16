@@ -154,8 +154,8 @@ def app():
         distância em km ≈ graus × 111
         ```
         
-        Para cálculos precisos, usamos a **fórmula de Haversine** que leva em conta a curvatura da Terra.
-        
+        Para cálculos precisos, usamos a **fórmula de Haversine** que leva em conta a curvatura da Terra. Saiba mais aqui.
+                            
         #### Exemplo:
         
         - Raio (r) = 1°
@@ -196,9 +196,20 @@ def app():
                 max_value=float(max_theoretical_r),
                 value=suggested_r,
                 step=0.5,
-                help=f"""Define a distância máxima em graus para conexão direta entre cidades. 
-                      O valor máximo teórico é {max_theoretical_r:.1f} graus, mas valores acima de 20 
-                      podem resultar em caminhos diretos entre cidades muito distantes."""
+                help=f"""Define a distância máxima em graus para conexão direta entre cidades.
+
+                    Valores recomendados:
+                    • r < 1° (até ~111 km): Apenas cidades muito próximas
+                    • 1° ≤ r ≤ 5° (~111-555 km): Cidades regionalmente próximas
+                    • 5° < r ≤ 10° (~555-1110 km): Cidades em estados vizinhos
+                    • 10° < r ≤ 20° (~1110-2220 km): Conexões de longa distância
+                    • r > 20°: Não recomendado - conexões entre cidades muito distantes
+
+                    O valor máximo teórico é {max_theoretical_r:.1f} graus, que corresponde à maior distância possível 
+                    entre quaisquer duas cidades no conjunto de dados. No entanto, valores acima de 20° podem resultar 
+                    em caminhos diretos irrealistas entre cidades muito distantes.
+                    
+                    💡 Dica: Um bom valor inicial é aproximadamente 1/3 da distância em linha reta entre origem e destino."""
             )
             
             # Converter para km para referência
@@ -219,8 +230,19 @@ def app():
                 value=default_d_value,
                 step=50.0,
                 help=f"""Define a distância máxima em quilômetros para conexão direta entre cidades.
-                      O valor máximo teórico é {max_theoretical_km:.0f} km, mas valores muito altos
-                      podem resultar em caminhos diretos entre cidades muito distantes."""
+
+                    Valores recomendados:
+                    • d < 100 km: Apenas cidades muito próximas (mesma região metropolitana)
+                    • 100 ≤ d ≤ 500 km: Cidades na mesma região
+                    • 500 < d ≤ 1000 km: Cidades em estados vizinhos
+                    • 1000 < d ≤ 2000 km: Conexões de longa distância
+                    • d > 2000 km: Não recomendado - conexões entre cidades muito distantes
+
+                    O valor máximo teórico é {max_theoretical_km:.0f} km, que corresponde à maior distância possível 
+                    entre quaisquer duas cidades no conjunto de dados. No entanto, valores acima de 2000 km podem resultar 
+                    em caminhos diretos irrealistas entre cidades muito distantes.
+                    
+                    💡 Dica: Um bom valor inicial é aproximadamente 1/3 da distância em linha reta entre origem e destino."""
             )
             
             # Converter para graus para referência
