@@ -17,36 +17,70 @@ def build_graph(cities_df, r=None, d=None):
         raise ValueError("Pelo menos um dos parâmetros r ou d deve ser fornecido")
         
     G = nx.Graph()
+    
+    # Armazenar os parâmetros no grafo
+    G.graph['r'] = r
+    G.graph['d'] = d
 
     # Adicionar nós
     for index, row in cities_df.iterrows():
-        G.add_node(row['city'], pos=(row['longitude'], row['latitude']), 
-                  state=row['state'], population=row['population'])
+        G.add_node(row['city'], 
+                  pos=(row['longitude'], row['latitude']), 
+                  state=row['state'], 
+                  population=float(row['population']),
+                  latitude=row['latitude'],
+                  longitude=row['longitude'])
 
-    # Adicionar arestas
+    # Adicionar arestas apenas entre cidades que respeitam as restrições
     for i, city1 in cities_df.iterrows():
         for j, city2 in cities_df.iterrows():
-            if i != j:
+            if i < j:  # Evita adicionar a mesma aresta duas vezes
                 # Calcular distâncias
                 euclidian_dist = calculate_distance(city1, city2)
                 km_dist = calculate_haversine_distance(city1, city2)
                 
                 # Verificar condições de conexão
-                connect = True
+                can_connect = True
                 if r is not None and euclidian_dist > r:
-                    connect = False
+                    can_connect = False
                 if d is not None and km_dist > d:
-                    connect = False
+                    can_connect = False
                 
-                if connect:
-                    # Decidir qual peso usar para a aresta (priorizando km se disponível)
-                    weight = km_dist if d is not None else euclidian_dist
-                    G.add_edge(city1['city'], city2['city'], 
-                               weight=weight, 
-                               euclidian_dist=euclidian_dist,
-                               km_dist=km_dist)
+                if can_connect:
+                    # Armazenar ambas as distâncias como atributos da aresta
+                    G.add_edge(city1['city'], city2['city'],
+                             weight=km_dist if d is not None else euclidian_dist,
+                             euclidian_dist=euclidian_dist,
+                             km_dist=km_dist)
 
     return G
+
+def build_graph_from_df(cities_df, r=None, d=None):
+    """Wrapper para build_graph que facilita a construção do grafo a partir de um DataFrame.
+    
+    Args:
+        cities_df: DataFrame com dados das cidades
+        r: Raio máximo de conexão em graus (distância euclidiana)
+        d: Distância máxima em quilômetros (usando Haversine)
+        
+    Returns:
+        Um objeto networkx.Graph representando as cidades e suas conexões
+    """
+    return build_graph(cities_df, r=r, d=d)
+
+def build_graph_from_df_km(cities_df, d_km):
+    """Constrói o grafo a partir de um DataFrame usando distância em quilômetros.
+    
+    Esta função é um wrapper para build_graph que utiliza apenas o parâmetro de distância em km.
+    
+    Args:
+        cities_df: DataFrame com dados das cidades
+        d_km: Distância máxima em quilômetros para estabelecer conexões entre cidades
+        
+    Returns:
+        Um objeto networkx.Graph representando as cidades e suas conexões
+    """
+    return build_graph(cities_df, r=None, d=d_km)
 
 def calculate_distance(city1, city2):
     """Calcula a distância euclidiana entre duas cidades."""
