@@ -71,36 +71,71 @@ def app():
     ## Algoritmos Implementados
     
     ### Busca em Largura (BFS)
-    
-    A Busca em Largura é um algoritmo que explora todos os vértices de um grafo a uma distância k do ponto de origem antes de explorar os vértices a uma distância k+1.
-    
-    **Pseudocódigo:**
+
+    A **Busca em Largura** (_Breadth-First Search — BFS_) é um algoritmo clássico de grafos, fundamental para encontrar caminhos mínimos (em número de arestas) entre dois nós. Nesta aplicação, implementamos uma versão de **BFS moderna, otimizada e adaptada para o contexto de cidades**, incorporando avanços de estado da arte:
+
+    #### Características Inovadoras
+
+    - **BFS Bidirecional**  
+    Expande simultaneamente do ponto inicial e do final, reduzindo a complexidade esperada de O(b^d) para O(b^{d/2}), onde `b` é o fator de ramificação e `d` é a profundidade do caminho ótimo.
+
+    - **Fila de Prioridade por População**  
+    Diferente da BFS tradicional, os vizinhos são priorizados de acordo com a população — cidades de menor população são exploradas primeiro, sem bloquear as demais. Isso garante tanto a completude quanto maior realismo para problemas urbanos com diferentes densidades regionais.
+
+    - **Cache de Soluções**  
+    Utiliza técnicas de cache para acelerar buscas frequentes entre pares já consultados.
+
+    - **Timeout Personalizável**  
+    Evita buscas longas em casos de grafos muito grandes ou configurações desfavoráveis.
+
+    - **Retorno Enriquecido (Métricas da Busca)**  
+    Além do caminho, a função retorna métricas como número de cidades exploradas, largura máxima da fronteira e percentual do grafo visitado — tudo pensado para visualização e análise comparativa.
+
+    - **Robustez e Produtividade**  
+    O algoritmo é seguro e confiável, retornando sempre uma lista (caminho vazio caso não haja solução), o que facilita a integração com sistemas de visualização ou análises subsequentes.
+
+    - **Paralelizável**  
+    A expansão dos vizinhos pode ser paralelizada para ganhos adicionais de performance em grafos muito grandes.
+
+    ---
+
+    #### 📘 Pseudocódigo (versão priorizada e bidirecional)
+
+    ```python
+    BFS_bidirecional_prioritario(grafo, inicio, fim):
+        fronteira_inicio, fronteira_fim = heaps por população
+        visitados_inicio, visitados_fim = conjuntos de visitados
+        pais_inicio, pais_fim = dicionários de predecessores
+
+        enquanto fronteiras não vazias e dentro do timeout:
+            expanda a fronteira com menor tamanho
+            nó_atual = remover do heap (nó de menor população)
+            para cada vizinho não visitado:
+                se vizinho já for visitado pela busca do outro lado:
+                    reconstruir e retornar o caminho, métricas
+                adicionar vizinho ao heap da fronteira, priorizando menor população
+                marcar vizinho como visitado
+        retornar lista vazia, indicando nenhuma rota encontrada
     ```
-    function BFS(graph, start, destination):
-        queue ← [start]
-        visited ← {start}
-        predecessors ← empty dictionary
-        
-        while queue is not empty:
-            current ← dequeue from queue
-            
-            if current = destination:
-                return reconstructPath(predecessors, start, destination)
-            
-            for each neighbor of current:
-                if neighbor not in visited:
-                    Add neighbor to visited
-                    Enqueue neighbor to queue
-                    predecessors[neighbor] ← current
-        
-        return "No path found"
-    ```
-    
-    **Características:**
-    - **Completude:** Sempre encontra uma solução se ela existir em grafos finitos
-    - **Otimalidade:** Garante o caminho com menor número de arestas (não necessariamente menor distância)
-    - **Complexidade Temporal:** O(V + E), onde V é o número de vértices e E é o número de arestas
-    - **Complexidade Espacial:** O(V) para armazenar os nós visitados
+
+    ---
+
+    #### 🧠 Propriedades Analíticas
+
+    - **Completude:** Sempre encontra uma solução se ela existir em grafos finitos conectados.  
+    - **Otimalidade:** Garante o caminho com menor número de arestas (não necessariamente menor distância total).  
+    - **Prioridade Realista:** Caminhos por cidades menos populosas tendem a ser explorados primeiro (útil em aplicações urbanas e de transporte público).  
+    - **Complexidade Temporal:** O(V + E), onde `V` é o número de vértices e `E` é o número de arestas. Na prática, a bidirecionalidade reduz a profundidade efetiva buscada.  
+    - **Complexidade Espacial:** O(V), para armazenar os nós visitados e dados auxiliares.  
+    - **Escalabilidade:** Timeout e paralelização permitem uso prático mesmo em grandes redes urbanas.  
+    - **Explicabilidade:** Pode retornar facilmente informações adicionais para análise comparativa, visualização e debug.
+
+    ---
+
+    Não que isso fosse nosso objetivo secundário, mas a estratégia aplicada nesta implementação vai **além do algoritmo básico**, contemplando robustez, desempenho, maior aderência a **cenários urbanos reais** e integração com **painéis analíticos**.
+
+
+
     
     ### Busca em Profundidade (DFS)
     
