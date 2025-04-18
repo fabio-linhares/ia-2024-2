@@ -36,7 +36,7 @@ def display_route_map(cities_df, paths):
         title_html = '''
              <h4 align="center" style="font-size:16px"><b>Mapa de Rotas entre Cidades</b></h4>
              <p align="center" style="font-size:12px">
-                Cores das Rotas: Azul (BFS), Verde (A*), Vermelho (Fuzzy)
+                Cores das Rotas: Azul (BFS), Verde (A*), Vermelho (Fuzzy), Amarelo (Dijkstra)
              </p>
              '''
         m.get_root().html.add_child(folium.Element(title_html))
@@ -82,8 +82,8 @@ def display_route_map(cities_df, paths):
                 ).add_to(marker_cluster)
         
         # Adicionar linhas para as rotas
-        colors = ['blue', 'green', 'red', 'purple', 'orange']
-        route_names = ["Rota BFS", "Rota A*", "Rota Fuzzy"]
+        colors = ['blue', 'green', 'red', 'yellow', 'orange']
+        route_names = ["Rota BFS", "Rota A*", "Rota Fuzzy", "Rota Dijkstra"]
         
         for i, path in enumerate(paths):
             if not path or len(path) < 2:  # Pular rotas vazias ou com apenas um ponto
@@ -114,15 +114,256 @@ def display_route_map(cities_df, paths):
         # Adicionar escala e controle de camadas ao mapa
         folium.LayerControl(position='topright', collapsed=False).add_to(m)
         
-        # Exibir o mapa no Streamlit
-        folium_static(m, width=800, height=500)
+        folium_static(m, width=800, height=600)
         
-        st.caption("**Dica**: Utilize o controle de camadas no canto superior direito para exibir/ocultar rotas e cidades.")
+        return m
+    except Exception as e:
+        st.error(f"Erro ao criar o mapa: {str(e)}")
+        return None
+
+def display_all_routes_map(cities_df, results):
+    """
+    Exibe um mapa interativo com todas as rotas encontradas pelos diferentes algoritmos.
+    
+    Args:
+        cities_df: DataFrame com as informações das cidades
+        results: Dicionário com os resultados dos algoritmos
+    
+    Returns:
+        Objeto mapa do folium
+    """
+    # Verificação de dados
+    if 'latitude' not in cities_df.columns or 'longitude' not in cities_df.columns:
+        st.error("Dados de latitude e longitude não encontrados. Verifique o arquivo cities.json.")
+        return None
+    
+    try:
+        # Centralizar o mapa nos Estados Unidos para melhor visualização
+        center_lat = 39.8
+        center_lon = -98.5
+        
+        # Criar mapa base
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=4, control_scale=True)
+        
+        # Definir cores para cada algoritmo
+        colors = {
+            'BFS': 'blue',
+            'DFS': 'purple',
+            'A*': 'green',
+            'Fuzzy': 'red',
+            'Dijkstra': 'orange'
+        }
+        
+        # Adicionar título e legenda ao mapa
+        title_html = '''
+             <div style="position: fixed; top: 10px; left: 50px; width: 280px; 
+                 background-color: white; padding: 10px; border-radius: 5px; z-index: 1000;
+                 box-shadow: 0 0 5px rgba(0,0,0,0.3);">
+                 <h4 style="margin: 0; text-align: center;">Legenda - Algoritmos</h4>
+                 <ul style="list-style: none; padding: 5px;">
+                     <li><span style="display: inline-block; width: 14px; height: 14px; background-color: blue; margin-right: 5px;"></span>BFS (Busca em Largura)</li>
+                     <li><span style="display: inline-block; width: 14px; height: 14px; background-color: purple; margin-right: 5px;"></span>DFS (Busca em Profundidade)</li>
+                     <li><span style="display: inline-block; width: 14px; height: 14px; background-color: green; margin-right: 5px;"></span>A* (A-Estrela)</li>
+                     <li><span style="display: inline-block; width: 14px; height: 14px; background-color: red; margin-right: 5px;"></span>Fuzzy (Busca Difusa)</li>
+                     <li><span style="display: inline-block; width: 14px; height: 14px; background-color: orange; margin-right: 5px;"></span>Dijkstra (Menor Distância)</li>
+                 </ul>
+             </div>
+             '''
+        m.get_root().html.add_child(folium.Element(title_html))
+        
+        # Conjunto para acompanhar todas as cidades que fazem parte de alguma rota
+        cities_in_routes = set()
+        
+        # Extrair cidades das rotas
+        for algo, resultado in results.items():
+            path = resultado[0]  # O caminho é sempre o primeiro elemento
+            if path:
+                cities_in_routes.update(path)
+        
+        # Adicionar marcadores para cidades de origem e destino
+        if results and len(next(iter(results.values()))[0]) >= 2:
+            first_algo = next(iter(results.keys()))
+            start_city = results[first_algo][0][0]
+            end_city = results[first_algo][0][-1]
+            
+            # Adicionar marcador para cidade de origem
+            start_data = cities_df[cities_df['city'] == start_city].iloc[0]
+            folium.Marker(
+                location=[start_data['latitude'], start_data['longitude']],
+                popup=f"<b>Origem: {start_city}</b>",
+                tooltip=f"Origem: {start_city}",
+                icon=folium.Icon(color='green', icon="play", prefix='fa')
+            ).add_to(m)
+            
+            # Adicionar marcador para cidade de destino
+            end_data = cities_df[cities_df['city'] == end_city].iloc[0]
+            folium.Marker(
+                location=[end_data['latitude'], end_data['longitude']],
+                popup=f"<b>Destino: {end_city}</b>",
+                tooltip=f"Destino: {end_city}",
+                icon=folium.Icon(color='red', icon="flag-checkered", prefix='fa')
+            ).add_to(m)
+            
+            # Usar clusters para cidades intermediárias
+            intermediate_cluster = MarkerCluster(
+                name="Cidades intermediárias",
+                tooltip="Clique para expandir"
+            ).add_to(m)
+            
+            # Adicionar marcadores para todas as cidades intermediárias
+            for city_name in cities_in_routes:
+                if city_name != start_city and city_name != end_city:
+                    city_data = cities_df[cities_df['city'] == city_name]
+                    if not city_data.empty:
+                        row = city_data.iloc[0]
+                        popup_text = f"""
+                        <b>{row['city']}, {row['state']}</b><br>
+                        População: {int(row['population']):,}<br>
+                        """
+                        folium.Marker(
+                            location=[row['latitude'], row['longitude']],
+                            popup=popup_text,
+                            tooltip=row['city']
+                        ).add_to(intermediate_cluster)
+        
+        # Adicionar linhas para cada rota
+        for algo, resultado in results.items():
+            path = resultado[0]  # O caminho é sempre o primeiro elemento
+            distance = resultado[1]  # A distância é sempre o segundo elemento
+            
+            if not path or len(path) < 2:
+                continue
+            
+            # Converter nomes das cidades em coordenadas
+            route_points = []
+            for city_name in path:
+                city_data = cities_df[cities_df['city'] == city_name]
+                if not city_data.empty:
+                    route_points.append([city_data.iloc[0]['latitude'], city_data.iloc[0]['longitude']])
+            
+            if len(route_points) > 1:
+                color = colors.get(algo, 'gray')  # Obter cor do algoritmo ou usar cinza como padrão
+                folium.PolyLine(
+                    route_points,
+                    color=color,
+                    weight=4,
+                    opacity=0.7,
+                    tooltip=f"{algo}: {len(path)} cidades, {distance:.2f}°",
+                    popup=f"<b>Algoritmo:</b> {algo}<br><b>Cidades:</b> {len(path)}<br><b>Distância:</b> {distance:.2f}° ({distance*111:.0f} km)"
+                ).add_to(m)
+        
+        # Adicionar controle de camadas
+        folium.LayerControl(position='topright', collapsed=False).add_to(m)
+        
+        # Renderizar o mapa no streamlit com tamanho aumentado para combinar com o grafo
+        folium_static(m, width=600, height=600)
+        
+        return m
+        
+    except Exception as e:
+        st.error(f"Erro ao criar mapa comparativo: {str(e)}")
+        import traceback
+        st.error(traceback.format_exc())
+        return None
+
+def display_path_on_map(cities_df, path, title="Caminho encontrado"):
+    """
+    Exibe um mapa interativo com um único caminho.
+    
+    Esta função é uma versão simplificada da display_route_map, exibindo
+    apenas um caminho específico no mapa.
+    
+    Args:
+        cities_df: DataFrame com as informações das cidades
+        path: Lista com os nomes das cidades que formam o caminho
+        title: Título a ser exibido no mapa
+    """
+    # Verificação de dados
+    if 'latitude' not in cities_df.columns or 'longitude' not in cities_df.columns:
+        st.error("Dados de latitude e longitude não encontrados. Verifique o arquivo cities.json.")
+        return None
+    
+    try:
+        # Centralizar o mapa nos Estados Unidos para melhor visualização
+        center_lat = 39.8
+        center_lon = -98.5
+        
+        # Criar mapa base
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=4, control_scale=True)
+        
+        # Adicionar título ao mapa
+        title_html = f'''
+             <h4 align="center" style="font-size:16px"><b>{title}</b></h4>
+             <p align="center" style="font-size:12px">Cada cidade na rota é marcada com uma cor diferente</p>
+             '''
+        m.get_root().html.add_child(folium.Element(title_html))
+        
+        # Definir uma lista de cores para usar nos marcadores
+        marker_colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred', 
+                         'lightred', 'darkblue', 'darkgreen', 'cadetblue', 
+                         'darkpurple', 'pink', 'lightblue', 'lightgreen', 'gray', 'black']
+        
+        # Adicionar marcadores para as cidades no caminho
+        for i, city_name in enumerate(path):
+            city_data = cities_df[cities_df['city'] == city_name]
+            if not city_data.empty:
+                row = city_data.iloc[0]
+                
+                # Preparar informações para exibição no popup
+                popup_text = f"""
+                <b>{row['city']}, {row['state']}</b><br>
+                População: {int(row['population']):,}<br>
+                Crescimento (2000-2013): {row['growth_from_2000_to_2013']}<br>
+                Coordenadas: {row['latitude']:.4f}, {row['longitude']:.4f}
+                """
+                
+                # Selecionar uma cor da lista para este marcador
+                color_index = i % len(marker_colors)
+                icon_color = marker_colors[color_index]
+                
+                # Usar ícones especiais para o início e fim do percurso
+                if i == 0:
+                    icon_type = 'play'
+                elif i == len(path) - 1:
+                    icon_type = 'flag-checkered'
+                else:
+                    icon_type = 'map-marker'
+                
+                # Adicionar o número da parada ao tooltip
+                tooltip_text = f"{i+1}. {row['city']}"
+                
+                folium.Marker(
+                    location=[row['latitude'], row['longitude']],
+                    popup=popup_text,
+                    tooltip=tooltip_text,
+                    icon=folium.Icon(color=icon_color, icon=icon_type, prefix='fa')
+                ).add_to(m)
+        
+        # Adicionar linha conectando as cidades do caminho
+        if len(path) > 1:
+            route_points = []
+            for city_name in path:
+                city_data = cities_df[cities_df['city'] == city_name]
+                if not city_data.empty:
+                    route_points.append([city_data.iloc[0]['latitude'], city_data.iloc[0]['longitude']])
+            
+            if len(route_points) > 1:
+                folium.PolyLine(
+                    route_points,
+                    weight=3,
+                    color='blue',
+                    opacity=0.7,
+                    tooltip=f"Rota com {len(path)} cidades"
+                ).add_to(m)
+        
+        folium_static(m, width=800, height=600)
+        
+        return m
         
     except Exception as e:
         st.error(f"Erro ao criar o mapa: {str(e)}")
-        st.write("Dados utilizados:", cities_df.head())
-        
+        return None
+
 def display_graph_visualization(G, cities_df, r=None, d=None):
     """
     Visualiza o grafo de conexões entre cidades.
