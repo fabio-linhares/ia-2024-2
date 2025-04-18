@@ -2,6 +2,7 @@
 matplotlib
 networkx
 numpy
+scipy
 pandas
 python-dotenv
 streamlit
