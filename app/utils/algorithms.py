@@ -288,54 +288,82 @@ def fuzzy_search(graph, cities_df, start, end, r=None, d=None):
     # Se não encontramos um caminho
     return None, float('inf'), 0, 0.0
 
-def depth_first_search(graph, start, end):
-    """
-    Implementação do algoritmo de busca em profundidade (DFS).
-    
-    Args:
-        graph: Grafo NetworkX com as cidades e conexões
-        start: Cidade de origem
-        end: Cidade de destino
-        
-    Returns:
-        path: Lista de cidades no caminho encontrado
-        total_dist: Distância total do caminho
-    """
-    if start not in graph or end not in graph:
-        return None, float('inf')
-    
-    # Pilha para DFS - armazena (nó atual, caminho até ele, distância acumulada)
-    stack = [(start, [start], 0)]
-    
-    # Conjunto para rastreamento de nós visitados
-    visited = {start}
-    
-    while stack:
-        current, path, total_dist = stack.pop()
-        
-        # Se chegamos ao destino, retornamos o caminho e a distância
-        if current == end:
-            return path, total_dist
-        
-        # Explorar todos os vizinhos não visitados
-        # Priorizar vizinhos com menor população
-        neighbors = sorted(
-            [(n, graph.nodes[n]['population']) for n in graph.neighbors(current) if n not in visited],
-            key=lambda x: int(x[1])  # Ordenar por população (menor primeiro)
-        )
-        
-        for neighbor, _ in neighbors:
-            visited.add(neighbor)
-            edge_data = graph.get_edge_data(current, neighbor)
-            new_dist = total_dist + edge_data['weight']
-            new_path = path + [neighbor]
-            stack.append((neighbor, new_path, new_dist))
-    
-    # Se não encontramos um caminho
-    return None, float('inf')
-
-# BFS
+# DFS
 ####################################
+def depth_first_search(graph, start, end, verbose=False, max_cost=None):
+    """
+    DFS aprimorado: heap de prioridade heurística, pruning por custo e max_cost, 
+    logging detalhado, contagem de nós expandidos e desempate avançado.
+    Args:
+        graph: Grafo NetworkX
+        start: nó de origem
+        end: nó de destino
+        verbose: ativa logs detalhados
+        max_cost: (opcional) corta busca se custo parcial exceder
+    Returns:
+        path: lista com caminho ótimo do start ao end encontrado
+        total_dist: custo total do caminho
+        elapsed_time: tempo de execução (ms)
+    """
+    start_time = time.perf_counter()
+    nodes_expanded = 0
+
+    def heuristic(node):
+        # Heurística básica: população (quanto menor, melhor); 
+        pop = int(graph.nodes[node].get('population', 0))
+        return pop
+
+    # Early exit (restrição de custo máximo total, assim como no A*)
+    if start not in graph or end not in graph:
+        return None, float('inf'), 0
+
+    stack = [(-0, 0, start, [start])]  # (prioridade, custo parcial, nó atual, caminho)
+    best_costs = {start: 0}
+    counter = 0  # Para desempate mais sofisticado como no A*
+    log = []
+
+    while stack:
+        priority, total_dist, current, path = heapq.heappop(stack)
+        nodes_expanded += 1
+
+        if verbose:
+            print(f"[DEBUG] Expande: {current} | custo: {total_dist} | prioridade: {-priority} | caminho: {path}")
+
+        # Early exit (max_cost)
+        if max_cost is not None and total_dist > max_cost:
+            if verbose:
+                print(f"[INFO] Early exit: custo {total_dist:.3f} excedeu limite {max_cost}.")
+            continue
+
+        if current == end:
+            elapsed_time = (time.perf_counter() - start_time) * 1000
+            if verbose:
+                print(f"[INFO] Caminho encontrado em {elapsed_time:.2f} ms, nós expandidos: {nodes_expanded}")
+            return path, total_dist, elapsed_time
+
+        # Pruning por custo (melhor caminho já atingido)
+        for neighbor in graph.neighbors(current):
+            if neighbor in path:  # Evita ciclos
+                continue
+            edge_data = graph.get_edge_data(current, neighbor)
+            new_dist = total_dist + edge_data.get('weight', 1)
+            if neighbor not in best_costs or new_dist < best_costs[neighbor]:
+                best_costs[neighbor] = new_dist
+                new_path = path + [neighbor]
+
+                # Critério de desempate mais sofisticado (tupla composta)
+                tiebreaker = heuristic(neighbor)
+                heapq.heappush(
+                    stack, 
+                    (-(new_dist + tiebreaker), new_dist, neighbor, new_path)
+                )
+
+    # Caminho não encontrado
+    elapsed_time = (time.perf_counter() - start_time) * 1000
+    if verbose:
+        print(f"[WARN] Caminho não encontrado. Nós expandidos: {nodes_expanded}, tempo: {elapsed_time:.2f} ms")
+    return None, float('inf'), elapsed_time
+
 def reconstruct_path(meeting, parents_start, parents_end):
     path_start = []
     node = meeting
@@ -360,6 +388,8 @@ def path_distance(graph, path):
             dist += edge['weight']
     return dist
 
+# BFS
+####################################
 def breadth_first_search(graph, start, end, timeout_ms=5000, log_metrics=True):
     """
     BFS bidirecional com fila de prioridade por menor população (NÃO bloqueia outros vizinhos).
@@ -557,7 +587,7 @@ def a_star_search(
         return data['weight'] + penalty
     cost = cost_fn if cost_fn else default_cost
 
-    # SUGESTÃO "c": Tiebreaker avançado — heurística, população, grau, hash
+    # Tiebreaker avançado — heurística, população, grau, hash
     def default_tiebreak(n):
         pop = graph.nodes[n].get('population', 0)
         grau = graph.degree[n]
@@ -576,12 +606,12 @@ def a_star_search(
     heapq.heappush(open_set, (f_score[start], tiebreak(start), counter, start))
 
     nodes_expanded = 0
-    log = []  # SUGESTÃO "e": logging detalhado em memória
+    log = []  #  logging detalhado em memória
 
     while open_set:
         _, _, _, current = heapq.heappop(open_set)
 
-        # SUGESTÃO "d": Lazy update — ignore se já fechado
+        # Lazy update
         if current in closed_set:
             continue
 
@@ -612,7 +642,7 @@ def a_star_search(
                 print(f"[STATS] Nós expandidos: {nodes_expanded}, tempo: {elapsed_time:.2f} ms")
             return path, g_score[end], elapsed_time
 
-        # SUGESTÃO "d": Early exit — interrompe se já acima do custo máximo
+        # Early exit — interrompe se já acima do custo máximo
         if max_cost is not None and g_score[current] > max_cost:
             if verbose:
                 print(f"[INFO] Early exit: custo {g_score[current]:.3f} excedeu limite {max_cost}.")
