@@ -334,11 +334,8 @@ def depth_first_search(graph, start, end):
     # Se não encontramos um caminho
     return None, float('inf')
 
-# BFS Com o bidirecional
+# BFS
 ####################################
-import time
-import heapq
-
 def reconstruct_path(meeting, parents_start, parents_end):
     path_start = []
     node = meeting
@@ -459,88 +456,6 @@ def breadth_first_search(graph, start, end, timeout_ms=5000, log_metrics=True):
         print("Busca finalizada sem caminho encontrado. Métricas:", info)
     return [], float('inf'), elapsed_time, info
 
-# def breadth_first_search(graph, start, end):
-#     """
-#     Busca em largura bidirecional em grafos do NetworkX
-#     com priorização por menor população.
-
-#     Se houver múltiplos vizinhos possíveis, o algoritmo deve escolher sempre o(s)
-#     de menor população, nunca explorar um vizinho de maior população se o de menor
-#     população estiver disponível. Nunca volta à mesma cidade no caminho. Isso é 
-#     aplicada nas duas frentes (start e end) da busca
-
-#     Retorna:
-#         path, total_dist, elapsed_time (ms)
-#     """
-#     start_time = time.perf_counter()
-
-#     if start not in graph or end not in graph:
-#         return None, float('inf'), 0
-#     if start == end:
-#         return [start], 0, 0
-
-#     # Estruturas para BFS a partir dos dois lados
-#     queue_start = deque([start])
-#     queue_end = deque([end])
-#     visited_start = {start}
-#     visited_end = {end}
-#     parents_start = {start: None}
-#     parents_end = {end: None}
-
-#     while queue_start and queue_end:
-#         # Expande o lado com menor fronteira para eficiência
-#         if len(queue_start) <= len(queue_end):
-#             current_side = 'start'
-#             queue = queue_start
-#             visited = visited_start
-#             parents = parents_start
-#             other_visited = visited_end
-#             other_parents = parents_end
-#         else:
-#             current_side = 'end'
-#             queue = queue_end
-#             visited = visited_end
-#             parents = parents_end
-#             other_visited = visited_start
-#             other_parents = parents_start
-
-#         current = queue.popleft()
-#         # Cria lista de vizinhos ordenada por menor população
-#         neighbors = sorted(
-#             [(n, int(graph.nodes[n]['population'])) for n in graph.neighbors(current) if n not in visited],
-#             key=lambda x: x[1]
-#         )
-#         for neighbor, _ in neighbors:
-#             if neighbor in visited:
-#                 continue
-#             visited.add(neighbor)
-#             parents[neighbor] = current
-#             # Encontro entre frentes
-#             if neighbor in other_visited:
-#                 # Reconstrói caminho total
-#                 if current_side == 'start':
-#                     meeting_node = neighbor
-#                 else:
-#                     meeting_node = neighbor
-#                     # parents_start e parents_end podem ser trocados dependendo do lado
-#                 path = reconstruct_path(
-#                     meeting_node,
-#                     parents_start,
-#                     parents_end
-#                 )
-#                 total_dist = path_distance(graph, path)
-#                 elapsed_time = (time.perf_counter() - start_time) * 1000
-#                 return path, total_dist, elapsed_time
-#             queue.append(neighbor)
-
-#     # Não encontrou caminho
-#     elapsed_time = (time.perf_counter() - start_time) * 1000
-#     return None, float('inf'), elapsed_time
-
-
-
-#############################################
-
 def haversine(lat1, lon1, lat2, lon2):
     """
     Calcula a distância Haversine entre dois pontos geográficos em km.
@@ -584,110 +499,148 @@ def calculate_distance_from_df(cities_df, start_city, end_city):
     # Calcular a distância usando a fórmula de Haversine
     return haversine(lat1, lon1, lat2, lon2)
 
-def a_star_search(graph, cities_df, start, end):
+# A Estrela 
+####################################
+def a_star_search(
+    graph, 
+    cities_df, 
+    start, 
+    end,
+    heuristic_fn=None,
+    cost_fn=None,
+    tiebreak_fn=None,
+    max_cost=None,        # early exit por custo máximo
+    verbose=False,
+    log_fn=None           # logging externo
+):
     """
-    Implementação do algoritmo A* para encontrar o caminho mais curto.
-    
+    Busca A* estado da arte, com desempate avançado, lazy update otimizado e logging detalhado.
+
+    Expande o nó do open set que tem o menor f_score, ou seja, aquele que parece 
+    resultar na menor distância total até o destino, levando em conta tanto o caminho 
+    já percorrido quanto a estimativa do restante.
+
     Args:
-        graph: Grafo NetworkX com as cidades e conexões
-        cities_df: DataFrame com informações das cidades (não usado atualmente)
-        start: Cidade de origem
-        end: Cidade de destino
-        
-    Returns:
-        path: Lista de cidades no caminho mais curto
-        total_dist: Distância total do caminho
-        elapsed_time: Tempo de execução em ms
-    """
+         graph: Grafo NetworkX
+         cities_df: DataFrame ou dicionário com informações extras das cidades
+         start: nó de origem
+         end: nó de destino
+         heuristic_fn: função customizável de heurística. Default: Haversine
+         cost_fn: função customizável de custo de aresta
+         tiebreak_fn: função customizável para desempate de prioridades
+         verbose: ativa logs detalhados
+     Returns:
+         path: lista com caminho ótimo do start ao end
+         total_dist: custo total do caminho
+         elapsed_time_ms: tempo de execução em milissegundos
+     """
     start_time = time.perf_counter()
-    
+
     if start not in graph or end not in graph:
         return None, float('inf'), 0
-    
-    # Heurística: distância Haversine direta entre dois pontos
-    def heuristic(node):
-        node_lat = graph.nodes[node]['latitude']
-        node_lon = graph.nodes[node]['longitude']
-        end_lat = graph.nodes[end]['latitude']
-        end_lon = graph.nodes[end]['longitude']
-        return haversine(node_lat, node_lon, end_lat, end_lon)
-    
-    # Inicializar valores
-    g_score = {node: float('inf') for node in graph.nodes()}
+
+    # Heurística padrão (Haversine)
+    def default_heuristic(n):
+        n_lat, n_lon = graph.nodes[n]['latitude'], graph.nodes[n]['longitude']
+        e_lat, e_lon = graph.nodes[end]['latitude'], graph.nodes[end]['longitude']
+        return haversine(n_lat, n_lon, e_lat, e_lon)
+    heuristic = heuristic_fn if heuristic_fn else default_heuristic
+
+    # Custo padrão enriquecido por atributos do cities_df
+    def default_cost(u, v, data):
+        city_info = cities_df.get(v, {})
+        penalty = 0
+        if 'criminalidade' in city_info:
+            penalty += float(city_info['criminalidade'])
+        if 'infraestrutura_ruim' in city_info:
+            penalty += float(city_info['infraestrutura_ruim'])
+        return data['weight'] + penalty
+    cost = cost_fn if cost_fn else default_cost
+
+    # SUGESTÃO "c": Tiebreaker avançado — heurística, população, grau, hash
+    def default_tiebreak(n):
+        pop = graph.nodes[n].get('population', 0)
+        grau = graph.degree[n]
+        return (heuristic(n), pop, -grau, hash(n))
+    tiebreak = tiebreak_fn if tiebreak_fn else default_tiebreak
+
+    g_score = {n: float('inf') for n in graph.nodes()}
+    f_score = {n: float('inf') for n in graph.nodes()}
+    predecessors = {n: None for n in graph.nodes()}
     g_score[start] = 0
-    
-    f_score = {node: float('inf') for node in graph.nodes()}
     f_score[start] = heuristic(start)
-    
-    # Predecessores para reconstrução do caminho
-    predecessors = {node: None for node in graph.nodes()}
-    
-    # Conjunto de nós visitados
-    closed_set = set()
-    
-    # Contador para desempate em f_score igual
+
     counter = 0
-    
-    # Fila de prioridade: (f_score, g_score, população, contador, nó)
-    open_set = [(f_score[start], 0, int(graph.nodes[start]['population']), counter, start)]
-    
+    closed_set = set()
+    open_set = []
+    heapq.heappush(open_set, (f_score[start], tiebreak(start), counter, start))
+
+    nodes_expanded = 0
+    log = []  # SUGESTÃO "e": logging detalhado em memória
+
     while open_set:
-        # Extrair nó com menor f_score
-        _, current_g, _, _, current = heapq.heappop(open_set)
-        
-        # Ignorar nós já processados
+        _, _, _, current = heapq.heappop(open_set)
+
+        # SUGESTÃO "d": Lazy update — ignore se já fechado
         if current in closed_set:
             continue
-        
-        # Se chegamos ao destino
+
+        if verbose or log_fn or log is not None:
+            log_entry = {
+                "current": current,
+                "f_score": f_score[current],
+                "g_score": g_score[current],
+                "expanded": nodes_expanded
+            }
+            if log_fn:
+                log_fn(log_entry)
+            else:
+                log.append(log_entry)
+            if verbose:
+                print(f"[DEBUG] Nós expandidos: {nodes_expanded} | Visitando {current} | f={f_score[current]:.3f} g={g_score[current]:.3f}")
+
         if current == end:
-            elapsed_time = (time.perf_counter() - start_time) * 1000  # em ms
-            
-            # Reconstruir caminho
+            elapsed_time = (time.perf_counter() - start_time) * 1000
             path = []
             node = current
             while node is not None:
                 path.append(node)
                 node = predecessors[node]
             path.reverse()
-            
+            if verbose:
+                print(f"[INFO] Caminho ótimo encontrado com custo {g_score[end]:.3f}.")
+                print(f"[STATS] Nós expandidos: {nodes_expanded}, tempo: {elapsed_time:.2f} ms")
             return path, g_score[end], elapsed_time
-        
-        # Marcar como visitado
+
+        # SUGESTÃO "d": Early exit — interrompe se já acima do custo máximo
+        if max_cost is not None and g_score[current] > max_cost:
+            if verbose:
+                print(f"[INFO] Early exit: custo {g_score[current]:.3f} excedeu limite {max_cost}.")
+            break
+
         closed_set.add(current)
-        
-        # Verificar vizinhos não visitados
+        nodes_expanded += 1
+
         for neighbor in graph.neighbors(current):
             if neighbor in closed_set:
                 continue
-            
-            # Calcular tentativa de g_score
+
             edge_data = graph.get_edge_data(current, neighbor)
-            tentative_g = g_score[current] + edge_data['weight']
-            
-            # Se encontramos um caminho melhor
+            tentative_g = g_score[current] + cost(current, neighbor, edge_data)
             if tentative_g < g_score[neighbor]:
-                # Atualizar g_score e predecessor
                 predecessors[neighbor] = current
                 g_score[neighbor] = tentative_g
                 f_score[neighbor] = tentative_g + heuristic(neighbor)
-                
-                # Adicionar à fila de prioridade
                 counter += 1
-                population = int(graph.nodes[neighbor]['population'])
-                heapq.heappush(open_set, (f_score[neighbor], tentative_g, population, counter, neighbor))
-            
-            # Se g_score igual, verificar população para desempate
-            elif tentative_g == g_score[neighbor]:
-                current_pred = predecessors[neighbor]
-                if current_pred and int(graph.nodes[current]['population']) < int(graph.nodes[current_pred]['population']):
-                    predecessors[neighbor] = current
-                    # Não precisamos atualizar g_score pois é o mesmo
-                    
-                    # Adicionar à fila de prioridade para garantir exploração
-                    counter += 1
-                    population = int(graph.nodes[neighbor]['population'])
-                    heapq.heappush(open_set, (f_score[neighbor], tentative_g, population, counter, neighbor))
-    
-    # Se não encontramos um caminho
-    return None, float('inf'), 0
+                heapq.heappush(open_set, (
+                    f_score[neighbor],
+                    tiebreak(neighbor),
+                    counter,
+                    neighbor
+                ))
+
+    # Caminho não encontrado
+    elapsed_time = (time.perf_counter() - start_time) * 1000
+    if verbose:
+        print(f"[WARN] Caminho não encontrado. Nós expandidos: {nodes_expanded}, tempo: {elapsed_time:.2f} ms")
+    return None, float('inf'), elapsed_time
