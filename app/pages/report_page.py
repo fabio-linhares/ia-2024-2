@@ -329,47 +329,7 @@ def app():
     - **Dijkstra:** Melhor para minimização precisa de distância em grafos relativamente pequenos
     - **A*:** Excelente para grafos grandes onde uma boa heurística existe
     - **Fuzzy:** Preferível para situações com incertezas nas conexões ou múltiplos objetivos
-    
-    ## Aprimoramentos Sugeridos por Especialistas
-    
-    Baseado na análise do código e na literatura especializada, os seguintes aprimoramentos poderiam ser implementados:
-    
-    ### Aprimoramentos de Algoritmos
-    
-    1. **BFS Bidirecional:** Implementar uma versão bidirecional do BFS para melhorar a eficiência em grafos grandes, reduzindo a complexidade para O(b^(d/2)).
-    
-    2. **A* com Heurísticas Dinâmicas:** Incorporar heurísticas que se adaptam dinamicamente baseadas no contexto atual da busca, permitindo ajustes em tempo real.
-    
-    3. **Algoritmos de Contração Hierárquica:** Pré-processar o grafo para acelerar consultas subsequentes, especialmente útil para mapas estáticos.
-    
-    4. **Fuzzy-Neuro Híbrido:** Combinar lógica fuzzy com redes neurais para aprender automaticamente os parâmetros ótimos da função de pertinência.
-    
-    5. **Busca Multi-Critério:** Implementar algoritmos que otimizem simultaneamente múltiplos objetivos (distância, tempo, custo, etc.) através de front de Pareto.
-    
-    ### Aprimoramentos de Implementação
-    
-    1. **Paralelização:** Implementar versões paralelas dos algoritmos, especialmente para BFS e Fuzzy, que são naturalmente paralelizáveis.
-    
-    2. **Estruturas de Dados Especializadas:** Utilizar Fibonacci Heaps para Dijkstra e A* para melhorar o tempo de execução teórico para O(E + V log V).
-    
-    3. **Indexação Espacial:** Incorporar estruturas como R-trees ou Quadtrees para otimizar buscas espaciais e consultas de vizinhança.
-    
-    4. **Cache de Caminhos:** Implementar um sistema de cache para armazenar e reutilizar caminhos parciais frequentemente consultados.
-    
-    5. **Processamento Incremental:** Permitir atualização eficiente do grafo sem recalcular toda a estrutura, útil para dados dinâmicos.
-    
-    ### Aprimoramentos de Modelagem
-    
-    1. **Modelagem Realista de Transporte:** Incorporar dados reais de infraestrutura de transporte em vez de assumir conexões baseadas apenas em distância euclidiana.
-    
-    2. **Pesos Dinâmicos:** Modelar pesos das arestas como funções do tempo para representar variações de tráfego, condições climáticas, etc.
-    
-    3. **Restrições Adicionais:** Incorporar restrições como limites de velocidade, zonas de baixa emissão, pedágios, e preferências de usuário.
-    
-    4. **Multimodalidade:** Expandir o modelo para incluir diferentes modos de transporte (carro, trem, avião) com suas respectivas características.
-    
-    5. **Modelagem Probabilística:** Substituir o modelo determinístico por um modelo que considere incertezas nos tempos de viagem e disponibilidade de conexões.
-    
+
     ## Conclusão
     
     Esta análise comparativa demonstrou as diferentes características e desempenhos dos algoritmos de busca aplicados ao problema de roteamento entre cidades. As principais conclusões são:
