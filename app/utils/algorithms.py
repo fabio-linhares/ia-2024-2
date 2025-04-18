@@ -1,134 +1,81 @@
-import networkx as nx
 import heapq
-from collections import deque
 import math
 import random
 import time
+from collections import deque
+from functools import lru_cache
+
+import networkx as nx
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Wrapper functions for the algorithms
-def bfs_search(graph, cities_df, start, end):
-    """Wrapper for breadth_first_search."""
+# def bfs_search(graph, cities_df, start, end):
+#     """Wrapper for breadth_first_search."""
+#     return breadth_first_search(graph, start, end)
+
+# Global mapping for demonstration (no thread safety here)
+# --- Se seu grafo sofrer mutação, o hash mudará e o cache será atualizado
+global_graph_map = {}
+
+def get_graph_hash(graph):
+    # Crie um hash simples representando o estado do grafo
+    return hash(str(graph.edges(data=True)) + str(graph.nodes(data=True)))
+
+@lru_cache(maxsize=5000)
+def bfs_cached(graph_hash, start, end):
+    # Recupera o grafo real pelo hash
+    graph = global_graph_map[graph_hash]
     return breadth_first_search(graph, start, end)
 
+def bfs_search(graph, cities_df, start, end):
+    """Wrapper for cached breadth_first_search."""
+    graph_hash = get_graph_hash(graph)
+    global_graph_map[graph_hash] = graph  # Armazene o grafo para consulta
+    return bfs_cached(graph_hash, start, end)
+
+
+# --- DFS: não vale a pena aplicar cache, wrapper simples ---
+# --- pois isso raramente traz benefícios para consultas reais.
+# --- O cache é mais útil para algoritmos como A* e Dijkstra, 
+# --- onde o grafo é mais estável e as consultas são mais frequentes.
+# --- O DFS é mais adequado para buscas pontuais e não se beneficia tanto do cache.
 def dfs_search(graph, cities_df, start, end):
-    """Wrapper for depth_first_search."""
     return depth_first_search(graph, start, end)
 
-def a_star(graph, cities_df, start, end):
-    """Wrapper for a_star_search."""
+# --- A*: wrapper com cache ---
+@lru_cache(maxsize=5000)
+def a_star_cached(graph_hash, start, end):
+    graph = global_graph_map[graph_hash]
     return a_star_search(graph, cities_df, start, end)
 
-def dijkstra(graph, cities_df, start, end):
-    """Wrapper for dijkstra_search."""
+def a_star(graph, cities_df, start, end):
+    graph_hash = get_graph_hash(graph)
+    global_graph_map[graph_hash] = graph
+    return a_star_cached(graph_hash, start, end)
+
+# --- Dijkstra: wrapper com cache ---
+@lru_cache(maxsize=5000)
+def dijkstra_cached(graph_hash, start, end):
+    graph = global_graph_map[graph_hash]
     return dijkstra_search(graph, cities_df, start, end)
 
-def fuzzy(graph, cities_df, start, end):
-    """Wrapper for fuzzy_search."""
+def dijkstra(graph, cities_df, start, end):
+    graph_hash = get_graph_hash(graph)
+    global_graph_map[graph_hash] = graph
+    return dijkstra_cached(graph_hash, start, end)
+
+# --- Fuzzy search: wrapper com cache ---
+@lru_cache(maxsize=5000)
+def fuzzy_cached(graph_hash, start, end):
+    graph = global_graph_map[graph_hash]
     return fuzzy_search(graph, cities_df, start, end)
 
-class IterativeBFS:
-    def __init__(self, graph, start, end):
-        """
-        Inicializa a busca BFS iterativa.
-        
-        Args:
-            graph: Grafo NetworkX com as cidades e conexões
-            start: Cidade de origem
-            end: Cidade de destino
-        """
-        self.graph = graph
-        self.start = start
-        self.end = end
-        self.queue = deque([(start, [start], 0)])  # (nó atual, caminho, distância)
-        self.visited = {start}
-        self.found = False
-        self.current_path = []
-        self.current_dist = 0
-        self.start_time = time.perf_counter()
-        self.elapsed_time = 0
-        # Dados para visualização
-        self.frontier_nodes = [start]
-        self.visited_nodes = {start}
-    
-    def step(self):
-        """
-        Executa uma iteração do algoritmo BFS.
-        
-        Returns:
-            bool: True se o algoritmo terminou (caminho encontrado ou impossível),
-                  False se ainda há iterações a serem executadas
-        """
-        if not self.queue:
-            # Não há mais nós para explorar, caminho não encontrado
-            self.elapsed_time = (time.perf_counter() - self.start_time) * 1000  # em ms
-            return True
-        
-        current, path, total_dist = self.queue.popleft()
-        
-        # Atualizar o caminho e distância atual para visualização
-        self.current_path = path
-        self.current_dist = total_dist
-        
-        # Remover o nó atual da fronteira
-        if current in self.frontier_nodes:
-            self.frontier_nodes.remove(current)
-        
-        # Se chegamos ao destino
-        if current == self.end:
-            self.found = True
-            self.elapsed_time = (time.perf_counter() - self.start_time) * 1000  # em ms
-            return True
-        
-        # Explorar vizinhos
-        for neighbor in self.graph.neighbors(current):
-            if neighbor not in self.visited:
-                self.visited.add(neighbor)
-                self.visited_nodes.add(neighbor)
-                
-                # Adicionar à fronteira para visualização
-                self.frontier_nodes.append(neighbor)
-                
-                # Calcular a nova distância
-                edge_data = self.graph.get_edge_data(current, neighbor)
-                new_dist = total_dist + edge_data['weight']
-                new_path = path + [neighbor]
-                
-                # Adicionar à fila para exploração
-                self.queue.append((neighbor, new_path, new_dist))
-        
-        return False  # Ainda não terminamos
-    
-    def get_iteration_data(self):
-        """
-        Retorna os dados da iteração atual para visualização.
-        
-        Returns:
-            dict: Dicionário com os dados da iteração
-        """
-        return {
-            'current_path': self.current_path,
-            'current_dist': self.current_dist,
-            'visited_nodes': list(self.visited_nodes),
-            'frontier_nodes': self.frontier_nodes
-        }
-    
-    def get_current_path(self):
-        """
-        Retorna o caminho atual.
-        
-        Returns:
-            list: Lista de cidades no caminho atual
-        """
-        return self.current_path
-    
-    def get_current_dist(self):
-        """
-        Retorna a distância atual.
-        
-        Returns:
-            float: Distância acumulada do caminho atual
-        """
-        return self.current_dist
+def fuzzy(graph, cities_df, start, end):
+    graph_hash = get_graph_hash(graph)
+    global_graph_map[graph_hash] = graph
+    return fuzzy_cached(graph_hash, start, end)
+
 
 def dijkstra_search(graph, cities_df, start, end):
     """
@@ -387,55 +334,212 @@ def depth_first_search(graph, start, end):
     # Se não encontramos um caminho
     return None, float('inf')
 
-def breadth_first_search(graph, start, end):
+# BFS Com o bidirecional
+####################################
+import time
+import heapq
+
+def reconstruct_path(meeting, parents_start, parents_end):
+    path_start = []
+    node = meeting
+    while node is not None:
+        path_start.append(node)
+        node = parents_start.get(node)
+    path_start.reverse()
+    path_end = []
+    node = parents_end.get(meeting)
+    while node is not None:
+        path_end.append(node)
+        node = parents_end.get(node)
+    return path_start + path_end
+
+def path_distance(graph, path):
+    if not path or len(path) == 1:
+        return 0
+    dist = 0
+    for i in range(len(path) - 1):
+        edge = graph.get_edge_data(path[i], path[i + 1])
+        if edge is not None:
+            dist += edge['weight']
+    return dist
+
+def breadth_first_search(graph, start, end, timeout_ms=5000, log_metrics=True):
     """
-    Implementação do algoritmo de busca em largura (BFS).
-    
+    BFS bidirecional com fila de prioridade por menor população (NÃO bloqueia outros vizinhos).
+    Paralelização condicional por camada, timeout, métricas de performance.
+
     Args:
-        graph: Grafo NetworkX com as cidades e conexões
-        start: Cidade de origem
-        end: Cidade de destino
-        
+        graph: Grafo NetworkX
+        start, end: cidades
+        timeout_ms: limite em ms (default: 5000)
+        parallel_threshold: nº de nós em fronteira para paralelizar expansão dos vizinhos
+        threads: nº de threads para paralelismo
+        log_metrics: exibe métricas avançadas
     Returns:
-        path: Lista de cidades no caminho encontrado
-        total_dist: Distância total do caminho
-        elapsed_time: Tempo de execução em ms
+        path, total_dist, elapsed_time_ms, info_dict
     """
+    # Inicia o tempo de execução
+    # Se o grafo não contém as cidades, retorna vazio
     start_time = time.perf_counter()
-    
     if start not in graph or end not in graph:
-        return None, float('inf'), 0
+        return [], float('inf'), 0, {}
+    if start == end:
+        return [start], 0, 0, {}
     
-    # Fila FIFO para BFS - armazena (nó atual, caminho até ele, distância acumulada)
-    queue = deque([(start, [start], 0)])
-    
-    # Conjunto para rastreamento de nós visitados
-    visited = {start}
-    
-    while queue:
-        current, path, total_dist = queue.popleft()
-        
-        # Se chegamos ao destino, retornamos o caminho e a distância
-        if current == end:
-            elapsed_time = (time.perf_counter() - start_time) * 1000  # em ms
-            return path, total_dist, elapsed_time
-        
-        # Explorar todos os vizinhos não visitados
-        # Priorizar vizinhos com menor população
-        neighbors = sorted(
-            [(n, graph.nodes[n]['population']) for n in graph.neighbors(current) if n not in visited],
-            key=lambda x: int(x[1])  # Ordenar por população (menor primeiro)
-        )
-        
-        for neighbor, _ in neighbors:
+    # Fila de prioridade: (população, entrada incremental, node)
+    frontier_start = []
+    heapq.heappush(frontier_start, (int(graph.nodes[start]['population']), 0, start))
+    frontier_end = []
+    heapq.heappush(frontier_end, (int(graph.nodes[end]['population']), 0, end))
+    visited_start = {start}
+    visited_end = {end}
+    parents_start = {start: None}
+    parents_end = {end: None}
+    counter = 1  # Para desempate no heapq
+    frontier_max = 2
+    nodes_visited = set([start, end])
+    max_nodes = graph.number_of_nodes()
+    iteration = 0
+
+    while frontier_start and frontier_end:
+        if (time.perf_counter() - start_time) * 1000 > timeout_ms:
+            if log_metrics:
+                print("Timeout atingido.")
+            return [], float('inf'), (time.perf_counter() - start_time) * 1000, {
+                'visited': len(nodes_visited),
+                'frontier_max': frontier_max,
+                'explored_pct': (len(nodes_visited) / max_nodes) * 100,
+                'timeout': True
+            }
+        # Expande o menor heap
+        if len(frontier_start) <= len(frontier_end):
+            frontier, visited, parents = frontier_start, visited_start, parents_start
+            other_visited, other_parents = visited_end, parents_end
+        else:
+            frontier, visited, parents = frontier_end, visited_end, parents_end
+            other_visited, other_parents = visited_start, parents_start
+
+        _, _, current = heapq.heappop(frontier)
+        for neighbor in graph.neighbors(current):
+            if neighbor in visited:
+                continue
             visited.add(neighbor)
-            edge_data = graph.get_edge_data(current, neighbor)
-            new_dist = total_dist + edge_data['weight']
-            new_path = path + [neighbor]
-            queue.append((neighbor, new_path, new_dist))
-    
-    # Se não encontramos um caminho
-    return None, float('inf'), 0
+            parents[neighbor] = current
+            nodes_visited.add(neighbor)
+            if neighbor in other_visited:
+                # Reconstrói caminho e retorna
+                path = reconstruct_path(
+                    neighbor, parents_start, parents_end
+                )
+                total_dist = path_distance(graph, path)
+                elapsed_time = (time.perf_counter() - start_time) * 1000
+                info = {
+                    'visited': len(nodes_visited),
+                    'frontier_max': frontier_max,
+                    'explored_pct': (len(nodes_visited) / max_nodes) * 100,
+                    'iterations': iteration
+                }
+                return path, total_dist, elapsed_time, info
+            heapq.heappush(
+                frontier,
+                (int(graph.nodes[neighbor]['population']), counter, neighbor)
+            )
+            counter += 1
+        frontier_max = max(frontier_max, len(frontier_start), len(frontier_end))
+        iteration += 1
+
+    elapsed_time = (time.perf_counter() - start_time) * 1000
+    info = {
+        'visited': len(nodes_visited),
+        'frontier_max': frontier_max,
+        'explored_pct': (len(nodes_visited) / max_nodes) * 100,
+        'iterations': iteration
+    }
+    if log_metrics:
+        print("Busca finalizada sem caminho encontrado. Métricas:", info)
+    return [], float('inf'), elapsed_time, info
+
+# def breadth_first_search(graph, start, end):
+#     """
+#     Busca em largura bidirecional em grafos do NetworkX
+#     com priorização por menor população.
+
+#     Se houver múltiplos vizinhos possíveis, o algoritmo deve escolher sempre o(s)
+#     de menor população, nunca explorar um vizinho de maior população se o de menor
+#     população estiver disponível. Nunca volta à mesma cidade no caminho. Isso é 
+#     aplicada nas duas frentes (start e end) da busca
+
+#     Retorna:
+#         path, total_dist, elapsed_time (ms)
+#     """
+#     start_time = time.perf_counter()
+
+#     if start not in graph or end not in graph:
+#         return None, float('inf'), 0
+#     if start == end:
+#         return [start], 0, 0
+
+#     # Estruturas para BFS a partir dos dois lados
+#     queue_start = deque([start])
+#     queue_end = deque([end])
+#     visited_start = {start}
+#     visited_end = {end}
+#     parents_start = {start: None}
+#     parents_end = {end: None}
+
+#     while queue_start and queue_end:
+#         # Expande o lado com menor fronteira para eficiência
+#         if len(queue_start) <= len(queue_end):
+#             current_side = 'start'
+#             queue = queue_start
+#             visited = visited_start
+#             parents = parents_start
+#             other_visited = visited_end
+#             other_parents = parents_end
+#         else:
+#             current_side = 'end'
+#             queue = queue_end
+#             visited = visited_end
+#             parents = parents_end
+#             other_visited = visited_start
+#             other_parents = parents_start
+
+#         current = queue.popleft()
+#         # Cria lista de vizinhos ordenada por menor população
+#         neighbors = sorted(
+#             [(n, int(graph.nodes[n]['population'])) for n in graph.neighbors(current) if n not in visited],
+#             key=lambda x: x[1]
+#         )
+#         for neighbor, _ in neighbors:
+#             if neighbor in visited:
+#                 continue
+#             visited.add(neighbor)
+#             parents[neighbor] = current
+#             # Encontro entre frentes
+#             if neighbor in other_visited:
+#                 # Reconstrói caminho total
+#                 if current_side == 'start':
+#                     meeting_node = neighbor
+#                 else:
+#                     meeting_node = neighbor
+#                     # parents_start e parents_end podem ser trocados dependendo do lado
+#                 path = reconstruct_path(
+#                     meeting_node,
+#                     parents_start,
+#                     parents_end
+#                 )
+#                 total_dist = path_distance(graph, path)
+#                 elapsed_time = (time.perf_counter() - start_time) * 1000
+#                 return path, total_dist, elapsed_time
+#             queue.append(neighbor)
+
+#     # Não encontrou caminho
+#     elapsed_time = (time.perf_counter() - start_time) * 1000
+#     return None, float('inf'), elapsed_time
+
+
+
+#############################################
 
 def haversine(lat1, lon1, lat2, lon2):
     """
