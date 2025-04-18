@@ -134,40 +134,81 @@ def app():
 
     Não que isso fosse nosso objetivo secundário, mas a estratégia aplicada nesta implementação vai **além do algoritmo básico**, contemplando robustez, desempenho, maior aderência a **cenários urbanos reais** e integração com **painéis analíticos**.
 
+    
+    ## 🔍 Busca em Profundidade Aprimorada (DFS)
 
+    A **Busca em Profundidade Aprimorada** explora o grafo indo o mais fundo possível em cada ramo antes de retroceder.  
+    Nesta versão, aplicamos conceitos inspirados em algoritmos informados (como o **A\***), tornando o algoritmo mais eficiente — especialmente para **roteamento urbano** e **grafos ponderados**.
 
-    
-    ### Busca em Profundidade (DFS)
-    
-    A Busca em Profundidade explora o grafo o mais profundamente possível ao longo de cada ramo antes de retroceder.
-    
-    **Pseudocódigo:**
-    ```
-    function DFS(graph, start, destination):
-        stack ← [start]
-        visited ← {start}
-        predecessors ← empty dictionary
-        
+    ---
+
+    ### 📘 Pseudocódigo — DFS Aprimorado
+
+    ```python
+    function DFS_aprimorado(graph, start, destination, max_cost=None):
+        # Pilha como heap de prioridade (heapq)
+        stack ← [(-0, 0, start, [start])]
+        best_costs ← {start: 0}
+
         while stack is not empty:
-            current ← pop from stack
+            priority, total_cost, current, path ← heappop(stack)
             
-            if current = destination:
-                return reconstructPath(predecessors, start, destination)
+            if max_cost is not None and total_cost > max_cost:
+                continue  # Early exit: custo excede o limite
+
+            if current == destination:
+                return path, total_cost
             
             for each neighbor of current:
-                if neighbor not in visited:
-                    Add neighbor to visited
-                    Push neighbor to stack
-                    predecessors[neighbor] ← current
+                if neighbor not in path:
+                    new_cost ← total_cost + edge_weight(current, neighbor)
+                    if neighbor not in best_costs or new_cost < best_costs[neighbor]:
+                        best_costs[neighbor] ← new_cost
+                        heuristic ← calcula_heurística(neighbor, destination)
+                        heappush(stack, (-(new_cost + heuristic), new_cost, neighbor, path + [neighbor]))
         
-        return "No path found"
+        return None, ∞
     ```
-    
-    **Características:**
-    - **Completude:** Completo apenas para grafos finitos com controle de ciclos
-    - **Otimalidade:** Não garante o caminho ótimo
-    - **Complexidade Temporal:** O(V + E)
-    - **Complexidade Espacial:** O(d) onde d é a profundidade máxima da árvore de busca
+
+    ---
+
+    ### ✨ Destaques e Melhorias Implementadas
+
+    - 🧮 **Pilha de prioridade:**  
+    Utiliza `heapq` para guiar a expansão com base em uma **heurística customizável** (ex.: população, distância).
+
+    - ✂️ **Poda eficiente:**  
+    Caminhos com custo pior que o melhor já registrado para um nó são **descartados imediatamente**.
+
+    - ⏱ **Early exit:**  
+    Interrompe buscas cujo custo ultrapasse um limite máximo (`max_cost`), economizando recursos.
+
+    - ⚖️ **Critérios de desempate flexíveis:**  
+    Ordenação pode considerar múltiplos fatores: população, grau, distância ou combinação ponderada.
+
+    - 🔄 **Prevenção de ciclos:**  
+    Garante que vértices já visitados no caminho atual não sejam revisitados.
+
+    - 📊 **Compatível com logging e métricas:**  
+    Suporte embutido para análise de desempenho (tempo, nós expandidos, custo total).
+
+    ---
+
+    ### ⚙️ Características Técnicas
+
+    - **Completude:**  
+    Garante solução se o grafo for finito, desde que a poda não elimine caminhos viáveis.
+
+    - **Quase-otimalidade:**  
+    Pode se aproximar do caminho ótimo na prática, dependendo da qualidade da heurística.
+
+    - **Complexidade Temporal:**  
+    Teoricamente $O(V + E)$, mas **muito mais eficiente na prática** com heurísticas e poda.
+
+    - **Complexidade Espacial:**  
+    $O(d)$, onde `d` é a profundidade máxima do ramo mais longo na heap.
+
+
     
     ### Algoritmo de Dijkstra
     
