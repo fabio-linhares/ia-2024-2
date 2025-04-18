@@ -10,13 +10,11 @@ from app.utils import data_loader, graph_utils, algorithms
 
 def app():
     # Configuração da página
-    st.title("Relatório: Algoritmos de Busca em Rotas Entre Cidades")
+    st.title("Relatório")
     # Title and Header
-    st.markdown("""
-    # Análise Comparativa de Algoritmos de Busca para Roteamento
-    *Uma abordagem baseada em grafos para encontrar caminhos entre cidades*
-    """)
-    
+    st.markdown("""### Avaliação B1 - Problem Solving com Algoritmos de Busca em Grafos""") 
+    st.markdown("<div style='text-align: center;'>Fábio Linhares - PPGI-UFAL</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center;'>Versão 1.0 - 2025</div>", unsafe_allow_html=True)
     # Table of Contents
     st.sidebar.markdown("## Sumário")
     st.sidebar.markdown("""
@@ -30,6 +28,7 @@ def app():
     - [Conclusão](#conclusão)
     - [Referências](#referências)
     """)
+
     
     # Main content
     st.markdown("""
