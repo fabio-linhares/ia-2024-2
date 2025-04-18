@@ -1,21 +1,30 @@
-import streamlit as st
-import pandas as pd
-import networkx as nx
-import streamlit_folium
-import folium
-import os
-import matplotlib.pyplot as plt
-import json
+# Standard library
 import datetime
+import json
+import os
+import time
+
+# Third‑party libraries
+import folium
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+import pandas as pd
+from scipy import stats
+import streamlit as st
+import streamlit_folium
 from streamlit_option_menu import option_menu
+
+# Local application imports
 from app.components import city_selector, map_display, progress_bar, report_viewer
 from app.utils import data_loader, graph_utils
+
 
 def app():
     # Importação do módulo algorithms dentro da função para garantir que esteja no escopo correto
     from app.utils import algorithms
     
-    # Esconder as informações não desejadas
+    # Esconder as informações não desejadas e aplicar estilos personalizados
     hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -23,22 +32,36 @@ def app():
     .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
         font-size:16px;
     }
+    /* Remove a barra horizontal no topo */
+    header {
+        background-color: transparent !important;
+        border-bottom: none !important;
+    }
+    /* Ajusta o título para ficar mais próximo do topo */
+    .block-container {
+        padding-top: 1rem !important;
+    }
+    /* Deixa o título com estilo mais destacado */
+    h1:first-of-type {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        font-size: 2.5rem !important;
+        color: var(--primary-color) !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    }
     </style>
     """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     
-    st.title("Localizador de Rotas entre Cidades")
+    # Título e subtítulo centralizados com espaçamento reduzido
     st.markdown("""
-    ### Encontre o melhor caminho entre cidades americanas usando algoritmos de busca
-    
-    Este aplicativo utiliza dados reais de mais de 1000 cidades dos Estados Unidos para calcular 
-    rotas ótimas considerando distância e outros fatores. Você pode comparar o desempenho de 
-    diferentes algoritmos de busca e visualizar os resultados em um mapa interativo.
-    """)
+    <div style="text-align: center;">
+                    <h1 style="margin-top: 0.2rem; margin-bottom: 0.5rem;">City Router</h1>
+    <h3 style="margin-bottom: 0.5rem; font-weight: normal;">Encontre a melhor rota entre cidades 
+                americanas usando algoritmos clássicos de busca </h3>
 
-    # Inicializar estado de sessão para histórico se não existir
-    if 'search_history' not in st.session_state:
-        st.session_state.search_history = []
+    </div>
+    """, unsafe_allow_html=True)
     
     # Calcular o caminho absoluto para o arquivo JSON
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -47,42 +70,142 @@ def app():
     # Verificar a existência do arquivo
     if not os.path.exists(json_path):
         st.error(f"Arquivo de dados não encontrado: {json_path}")
-        st.info("Por favor, verifique se o arquivo cities.json existe na pasta data.")
+        # Expandir automaticamente a seção de configurações
+        st.session_state.show_config = True
+        st.info("Por favor, verifique se o arquivo cities.json existe na pasta data ou faça upload do arquivo na seção 'Configurações Rápidas' da barra lateral.")
         return
     
     # Carregar dados
     try:
-        with st.spinner("Carregando dados de cidades dos EUA..."):
+        with st.spinner("Carregando dados do arquivo JSON..."):
             cities_df = data_loader.load_data(json_path)
             
-            # Exibir informações sobre os dados
+            # Dashboard no topo da página
+            st.markdown("""
+            <div style="margin-bottom: 1.5rem; animation: fadeIn 0.5s ease forwards;">
+                <p>Este aplicativo foi desenvolvido para atender à atividade de Problem Solving 
+                        proposta pelo Professor Doutor Glauber Rodrigues Leite. A partir de um arquivo 
+                        JSON contendo o ranking das cidades mais populosas dos Estados Unidos, o sistema 
+                        cria um grafo onde duas cidades estão diretamente conectadas sempre que a distância 
+                        euclidiana entre elas é menor ou igual a um parâmetro [ r ] definido pelo usuário. 
+                        O objetivo principal é encontrar a rota de menor distância acumulada entre duas cidades 
+                        arbitrárias, aplicando como critério de desempate o atributo de população (priorizando 
+                        cidades menos populosas).</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Cards do Dashboard
+            st.markdown("""
+            <div style="margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">📊 Resumo dos dados carregados</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Criar dashboard com cards
+            col1, col2, col3, col4 = st.columns(4)
+            
+            # Calcular estatísticas para os cards
+            total_cities = len(cities_df)
+            total_population = cities_df['population'].sum()
+            max_pop_city = cities_df.iloc[0]['city']
+            states_count = len(cities_df['state'].unique())
+            
+            # Função para criar um card
+            def create_card(column, title, value, icon, subtitle, color_class):
+                delay_index = 1
+                if column == col2:
+                    delay_index = 2
+                elif column == col3:
+                    delay_index = 3
+                elif column == col4:
+                    delay_index = 4
+                
+                delay_class = f"delay-{delay_index}"
+                column.markdown(f"""
+                <div class="dashboard-card card-{color_class} animate-fadeIn {delay_class}">
+                    <div class="card-icon">{icon}</div>
+                    <div class="card-title">{title}</div>
+                    <div class="card-value">{value}</div>
+                    <div class="card-subtitle">{subtitle}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Card 1 - Total de cidades
+            create_card(
+                col1, 
+                "TOTAL DE CIDADES", 
+                f"{total_cities:,}".replace(",", "."), 
+                "🏙️", 
+                "Base de dados completa", 
+                "purple"
+            )
+            
+            # Card 2 - População total
+            create_card(
+                col2, 
+                "POPULAÇÃO TOTAL", 
+                f"{total_population:,}".replace(",", "."), 
+                "👥", 
+                "Habitantes em todas as cidades", 
+                "green"
+            )
+            
+            # Card 3 - Maior cidade
+            create_card(
+                col3, 
+                "MAIOR CIDADE", 
+                max_pop_city, 
+                "🌃", 
+                f"População: {int(cities_df.iloc[0]['population']):,}".replace(",", "."), 
+                "blue"
+            )
+            
+            # Card 4 - Estados cobertos
+            create_card(
+                col4, 
+                "ESTADOS COBERTOS", 
+                str(states_count), 
+                "🗺️", 
+                "De 50 estados americanos", 
+                "orange"
+            )
+            
+            # Exibir informações sobre os dados na barra lateral
             st.sidebar.success(f"{len(cities_df)} cidades carregadas com sucesso!")
             st.sidebar.write("**Estatísticas dos Dados**")
             st.sidebar.write(f"• Maior cidade: {cities_df.iloc[0]['city']}, {cities_df.iloc[0]['state']}")
             st.sidebar.write(f"• População total: {cities_df['population'].sum():,} habitantes")
             st.sidebar.write(f"• Cobertura: {len(cities_df['state'].unique())} estados americanos")
             
-            # Adicionar histograma de população se espaço permitir
+
+            # Adicionar gráfico de distribuição populacional na barra lateral
             with st.sidebar.expander("📊 Distribuição populacional"):
                 fig, ax = plt.subplots(figsize=(4, 2))
-                ax.hist(cities_df['population'], bins=20, color='purple', alpha=0.7)
+                
+                # Usar KDE (Kernel Density Estimation) para mostrar a curva de distribuição
+                
+                # Remover outliers extremos para melhor visualização
+                population_data = cities_df['population']
+                q1, q3 = np.percentile(population_data, [25, 75])
+                iqr = q3 - q1
+                upper_limit = q3 + 5 * iqr  # Limite mais permissivo para manter mais dados
+                filtered_data = population_data[population_data <= upper_limit]
+                
+                # Criar densidade de kernel para visualização da distribuição
+                x = np.linspace(0, filtered_data.max(), 1000)
+                density = stats.gaussian_kde(filtered_data)
+                
+                # Plotar a curva de densidade
+                ax.plot(x, density(x), 'b-', lw=2, label='Densidade')
+                
+                # Adicionar histograma suave ao fundo para referência
+                ax.hist(filtered_data, bins=20, density=True, alpha=0.3, color='purple')
+                
                 ax.set_xlabel('População')
-                ax.set_ylabel('Frequência')
-                ax.set_title('Distribuição populacional')
+                ax.set_ylabel('Densidade')
+                ax.set_title('Forma da distribuição populacional')
                 ax.grid(alpha=0.3)
                 st.pyplot(fig)
-        
-        # Limitar para as 200 maiores cidades para melhor desempenho
-        with st.expander("⚙️ Configurações de desempenho", expanded=False):
-            numero_cidades = st.slider(
-                "Número de cidades a considerar (afeta o desempenho)", 
-                min_value=50, 
-                max_value=len(cities_df), 
-                value=200,
-                help="Um número menor de cidades melhora o desempenho do aplicativo"
-            )
-            cities_df = cities_df.head(numero_cidades)
-            st.write(f"Usando as {numero_cidades} maiores cidades para os cálculos.")
         
         city_names = cities_df['city'].tolist()
         
@@ -90,8 +213,13 @@ def app():
         st.error(f"Erro ao processar dados: {str(e)}")
         st.stop()
 
-    # Interface do usuário em um layout mais limpo
-    col1, col2 = st.columns(2)
+    st.markdown("""### 🚏 Origem -> Destino
+    """, unsafe_allow_html=True)
+
+    st.write("Selecione as cidades de origem e destino para calcular a rota.")
+
+    # Configurar área de seleção de origem e destino
+    col1, col2 = st.columns([1, 1])
     
     with col1:
         start_city = city_selector.city_selector(
@@ -113,7 +241,7 @@ def app():
         end_city = city_selector.city_selector(
             "Cidade de Destino", 
             city_names, 
-            "Los Angeles" if "Los Angeles" in city_names else city_names[-1]
+            "Los Angeles" if "Los Angeles" in city_names else city_names[1]
         )
         
         # Informações detalhadas sobre a cidade de destino
@@ -125,134 +253,113 @@ def app():
         - Posição no ranking: {cidade_destino['rank']}
         """)
     
-    # Calcular distância direta entre origem e destino usando Haversine
+    # Calcular distância direta entre origem e destino
     dist_direta = algorithms.calculate_distance_from_df(cities_df, start_city, end_city)
     dist_haversine = graph_utils.calculate_haversine_distance(
         cities_df[cities_df['city'] == start_city].iloc[0],
         cities_df[cities_df['city'] == end_city].iloc[0]
     )
     
-    st.write(f"**Distância em linha reta**: {dist_direta:.2f} graus (aprox. {dist_haversine:.0f} km)")
+    st.markdown(f"<div style='text-align: left;'><b>Distância em linha reta entre elas</b>: "
+               f"{dist_direta:.2f} graus (aprox. {dist_haversine:.0f} km)</div>", unsafe_allow_html=True)
     
-    # Explicação melhorada sobre a relação entre quilômetros e graus
-    with st.expander("ℹ️ Conversão entre graus e quilômetros", expanded=False):
-        st.markdown("""
-        ### Relação entre graus de coordenadas e quilômetros
-
-        Em coordenadas geográficas na superfície da Terra:
+    # Primeiro retângulo - Configurações e algoritmo de busca
+    st.markdown("""### ⚙️ Configurações
+    """, unsafe_allow_html=True)
+    
+    # Configurações de desempenho
+    with st.expander("🏙️ Quantidade de cidades utilizadas", expanded=False):
+        numero_cidades = st.slider(
+            "Número de cidades a considerar (afeta o desempenho)", 
+            min_value=50, 
+            max_value=len(cities_df), 
+            value=200,
+            help="Um número menor de cidades melhora o desempenho do aplicativo"
+        )
+        cities_df = cities_df.head(numero_cidades)
+        st.write(f"Usando as {numero_cidades} maiores cidades para os cálculos.")
         
-        - **1 grau de latitude ≈ 111 km** (constante em qualquer lugar da Terra)
-        - **1 grau de longitude** varia dependendo da latitude:
-          - No Equador (latitude 0°): 1° longitude ≈ 111 km
-          - Em latitudes médias (45°): 1° longitude ≈ 79 km
-          - Perto dos Polos (90°): 1° longitude ≈ 0 km
-
-        #### Fórmula simplificada
+    # Algoritmo de busca
+    with st.expander("🔍 Escolha dos Algoritmos de Busca", expanded=True):
+        st.markdown("Selecione os algoritmos que você deseja utilizar para encontrar a rota:")
         
-        Para uma estimativa rápida:
-        ```
-        distância em km ≈ graus × 111
-        ```
+        # Inicializar os estados dos checkboxes na session_state se não existirem
+        if 'use_bfs' not in st.session_state:
+            st.session_state.use_bfs = True
+        if 'use_dfs' not in st.session_state:
+            st.session_state.use_dfs = False
+        if 'use_astar' not in st.session_state:
+            st.session_state.use_astar = True
+        if 'use_fuzzy' not in st.session_state:
+            st.session_state.use_fuzzy = False
+        if 'use_dijkstra' not in st.session_state:
+            st.session_state.use_dijkstra = True
         
-        Para cálculos precisos, usamos a **fórmula de Haversine** que leva em conta a curvatura da Terra. Saiba mais aqui.
-                            
-        #### Exemplo:
+        col1, col2 = st.columns(2)
         
-        - Raio (r) = 1°
-          - Distância em linha reta ≈ 111 km
-          - Esta é aproximadamente a distância entre cidades vizinhas ou próximas
+        with col1:
+            st.session_state.use_bfs = st.checkbox(
+                "BFS (Busca em Largura)", 
+                value=st.session_state.use_bfs,
+                help="Encontra o caminho com menor número de cidades intermediárias"
+            )
+            st.session_state.use_dfs = st.checkbox(
+                "DFS (Busca em Profundidade)", 
+                value=st.session_state.use_dfs,
+                help="Busca em profundidade otimizada para encontrar caminhos curtos"
+            )
+            st.session_state.use_astar = st.checkbox(
+                "A* (A-Estrela)", 
+                value=st.session_state.use_astar,
+                help="Encontra o caminho mais curto em termos de distância"
+            )
         
-        - Raio (r) = 10°
-          - Distância em linha reta ≈ 1110 km
-          - Esta é aproximadamente a distância entre grandes cidades em estados diferentes
-        """)
-    
-    # Seletor de algoritmo e raio com explicações
-    st.write("### Parâmetros do algoritmo")
-    
-    # Adicionar opção para escolher o tipo de conexão
-    connection_type = st.radio(
-        "Tipo de conexão",
-        ["Raio em graus (r)", "Distância em km (d)", "Ambos"],
-        help="Escolha o tipo de restrição para conexões entre cidades"
-    )
-    
-    col1, col2 = st.columns(2)
-    
-    # Cálculo do raio máximo teórico (a distância máxima entre quaisquer duas cidades no conjunto de dados)
-    max_latitudes = cities_df['latitude'].max() - cities_df['latitude'].min()
-    max_longitudes = cities_df['longitude'].max() - cities_df['longitude'].min()
-    max_theoretical_r = ((max_latitudes**2) + (max_longitudes**2))**0.5
-    max_theoretical_km = max_theoretical_r * 111  # Aproximação usando 111km por grau
-    
-    with col1:
-        if connection_type in ["Raio em graus (r)", "Ambos"]:
-            # Valor sugerido para o raio (1/3 da distância direta, mas permitindo aumentar até o máximo)
-            suggested_r = min(10.0, dist_direta / 3)
-            
-            r = st.slider(
-                "Raio de conexão (r)", 
-                min_value=1.0, 
-                max_value=float(max_theoretical_r),
-                value=suggested_r,
-                step=0.5,
-                help=f"""Define a distância máxima em graus para conexão direta entre cidades.
-
-                    Valores recomendados:
-                    • r < 1° (até ~111 km): Apenas cidades muito próximas
-                    • 1° ≤ r ≤ 5° (~111-555 km): Cidades regionalmente próximas
-                    • 5° < r ≤ 10° (~555-1110 km): Cidades em estados vizinhos
-                    • 10° < r ≤ 20° (~1110-2220 km): Conexões de longa distância
-                    • r > 20°: Não recomendado - conexões entre cidades muito distantes
-
-                    O valor máximo teórico é {max_theoretical_r:.1f} graus, que corresponde à maior distância possível 
-                    entre quaisquer duas cidades no conjunto de dados. No entanto, valores acima de 20° podem resultar 
-                    em caminhos diretos irrealistas entre cidades muito distantes.
-                    
-                    💡 Dica: Um bom valor inicial é aproximadamente 1/3 da distância em linha reta entre origem e destino."""
+        with col2:
+            st.session_state.use_fuzzy = st.checkbox(
+                "Busca Fuzzy", 
+                value=st.session_state.use_fuzzy,
+                help="Lida com incertezas nas conexões e pode encontrar rotas alternativas"
+            )
+            st.session_state.use_dijkstra = st.checkbox(
+                "Dijkstra (Menor Distância)", 
+                value=st.session_state.use_dijkstra,
+                help="Encontra o caminho de menor distância preferindo cidades menos populosas em caso de empate"
             )
             
-            # Converter para km para referência
-            r_in_km = r * 111
-            st.caption(f"Raio selecionado: {r:.1f}° ≈ {r_in_km:.0f} km")
+        # Botão para selecionar todos
+        if st.button("Selecionar Todos"):
+            st.session_state.use_bfs = True
+            st.session_state.use_dfs = True
+            st.session_state.use_astar = True
+            st.session_state.use_fuzzy = True
+            st.session_state.use_dijkstra = True
+            st.rerun()
+        
+        # Construir a string do algoritmo baseado nas seleções
+        selected_algos = []
+        if st.session_state.use_bfs:
+            selected_algos.append("BFS")
+        if st.session_state.use_dfs:
+            selected_algos.append("DFS")
+        if st.session_state.use_astar:
+            selected_algos.append("A*")
+        if st.session_state.use_fuzzy:
+            selected_algos.append("Fuzzy")
+        if st.session_state.use_dijkstra:
+            selected_algos.append("Dijkstra")
+        
+        if len(selected_algos) == 5:
+            algorithm_choice = "Todos"
+        elif len(selected_algos) == 0:
+            st.warning("Por favor, selecione pelo menos um algoritmo")
+            algorithm_choice = None
         else:
-            r = None
-            
-    with col2:
-        if connection_type in ["Distância em km (d)", "Ambos"]:
-            # Converter valor em graus para km para um valor padrão inicial
-            default_d_value = min(1000.0, dist_haversine / 3)
-            
-            d = st.slider(
-                "Distância máxima em km (d)", 
-                min_value=100.0, 
-                max_value=float(max_theoretical_km),
-                value=default_d_value,
-                step=50.0,
-                help=f"""Define a distância máxima em quilômetros para conexão direta entre cidades.
-
-                    Valores recomendados:
-                    • d < 100 km: Apenas cidades muito próximas (mesma região metropolitana)
-                    • 100 ≤ d ≤ 500 km: Cidades na mesma região
-                    • 500 < d ≤ 1000 km: Cidades em estados vizinhos
-                    • 1000 < d ≤ 2000 km: Conexões de longa distância
-                    • d > 2000 km: Não recomendado - conexões entre cidades muito distantes
-
-                    O valor máximo teórico é {max_theoretical_km:.0f} km, que corresponde à maior distância possível 
-                    entre quaisquer duas cidades no conjunto de dados. No entanto, valores acima de 2000 km podem resultar 
-                    em caminhos diretos irrealistas entre cidades muito distantes.
-                    
-                    💡 Dica: Um bom valor inicial é aproximadamente 1/3 da distância em linha reta entre origem e destino."""
-            )
-            
-            # Converter para graus para referência
-            d_in_degrees = d / 111
-            st.caption(f"Distância selecionada: {d:.0f} km ≈ {d_in_degrees:.2f}°")
-        else:
-            d = None
-            
+            algorithm_choice = selected_algos[0] if len(selected_algos) == 1 else "Todos"
+            # Mostrar quais algoritmos serão executados
+            st.success(f"Algoritmos selecionados: {', '.join(selected_algos)}")
+    
     # Valor de raio recomendado
-    with st.expander("🔍 Recomendação de valores para raio (r) ou distância (d)"):
+    with st.expander("🔍 Recomendação de valores para raio (r) ou distância (d)", expanded=False):
         st.markdown("""
         ### Valores recomendados
         
@@ -273,57 +380,219 @@ def app():
         Um bom valor inicial é aproximadamente **1/3 da distância em linha reta** entre a origem e o destino.
         """)
     
-    algorithm_choice = st.selectbox(
-        "Algoritmo de busca", 
-        ["Todos", "BFS (Busca em Largura)", "A* (A-Estrela)", "Busca Fuzzy"],
-        help="""
-        - BFS: Encontra o caminho com menor número de cidades intermediárias
-        - A*: Encontra o caminho mais curto em termos de distância
-        - Fuzzy: Lida com incertezas nas conexões e pode encontrar rotas alternativas
-        """
-    )
+    # Explicação da relação entre quilômetros e graus
+    with st.expander("ℹ️ Conversão entre graus e quilômetros", expanded=False):
+        st.markdown("""
+        ### Relação entre graus de coordenadas e quilômetros
 
-    # Botão para encontrar a rota com explicação detalhada
-    if st.button("🔍 Encontrar Rota", help="Calcula a melhor rota entre as cidades selecionadas"):
-        with st.spinner("Calculando a melhor rota... Este processo pode levar alguns segundos dependendo do número de cidades."):
-            # Construir o grafo com base no tipo de conexão escolhido
-            G = graph_utils.build_graph(cities_df, r=r, d=d)
+        Em coordenadas geográficas na superfície da Terra:
+        
+        - **1 grau de latitude ≈ 111 km** (constante em qualquer lugar da Terra)
+        - **1 grau de longitude** varia dependendo da latitude:
+          - No Equador (latitude 0°): 1° longitude ≈ 111 km
+          - Em latitudes médias (45°): 1° longitude ≈ 79 km
+          - Perto dos Polos (90°): 1° longitude ≈ 0 km
+
+        #### Fórmula simplificada
+        
+        Para uma estimativa rápida:
+        ```
+        distância em km ≈ graus × 111
+        ```
+        
+        Para cálculos precisos, usamos a **fórmula de Haversine** que leva em conta a curvatura da Terra.
+                            
+        #### Exemplo:
+        
+        - Raio (r) = 1°
+          - Distância em linha reta ≈ 111 km
+          - Esta é aproximadamente a distância entre cidades vizinhas ou próximas
+        
+        - Raio (r) = 10°
+          - Distância em linha reta ≈ 1110 km
+          - Esta é aproximadamente a distância entre grandes cidades em estados diferentes
+        """)
+
+    # Cálculo do raio máximo teórico (movido para antes do uso)
+    max_latitudes = cities_df['latitude'].max() - cities_df['latitude'].min()
+    max_longitudes = cities_df['longitude'].max() - cities_df['longitude'].min()
+    max_theoretical_r = ((max_latitudes**2) + (max_longitudes**2))**0.5
+    max_theoretical_km = max_theoretical_r * 111  # Aproximação usando 111km por grau
+
+    # Adicionar expander para as configurações de conexão entre cidades
+    with st.expander("🔄 Configurações de conexão entre cidades", expanded=True):
+       # Adicionar opção para escolher o tipo de conexão
+       connection_type = st.radio(
+          "Tipo de conexão",
+          ["Raio em graus (r)", "Distância em km (d)", "Ambos"],
+          index=2,  # Default is now "Ambos" (index 2)
+          help="Escolha o tipo de restrição para conexões entre cidades. Quando 'Ambos' está selecionado, o grafo é construído considerando as duas restrições simultaneamente: uma conexão é estabelecida entre duas cidades apenas quando a distância entre elas satisfaz TANTO o limite de raio em graus QUANTO o limite de distância em km. Por exemplo, com raio=1° e distância=400km, duas cidades só estarão conectadas se estiverem dentro de 1° E também a menos de 400km uma da outra."
+       )
+       
+       # Inicializar variáveis de estado para o link entre sliders se não existir
+       if 'link_sliders' not in st.session_state:
+          st.session_state.link_sliders = True
+          
+       # Checkbox para controlar a trava entre os sliders
+       link_sliders = st.checkbox(
+          "Sincronizar sliders (raio e distância equivalentes)", 
+          value=st.session_state.link_sliders,
+          help="Quando marcado, o slider de distância em km será automaticamente atualizado para corresponder ao valor do raio em graus (1° ≈ 111 km)."
+       )
+       st.session_state.link_sliders = link_sliders
+       
+       # Configuração baseada no tipo de conexão
+       col1, col2 = st.columns(2)
+       
+       # Função para atualizar o valor de d quando r muda (se link estiver ativado)
+       def update_d_from_r():
+          if st.session_state.link_sliders and 'r_value' in st.session_state:
+             st.session_state.d_value = st.session_state.r_value * 111
+       
+       # Função para atualizar o valor de r quando d muda (se link estiver ativado)
+       def update_r_from_d():
+          if st.session_state.link_sliders and 'd_value' in st.session_state:
+             st.session_state.r_value = st.session_state.d_value / 111
+       
+       with col1:
+          if connection_type in ["Raio em graus (r)", "Ambos"]:
+             # Valor sugerido para o raio (1/3 da distância direta, mas no mínimo 1.0)
+             suggested_r = max(1.0, min(3.3, dist_direta / 3))
+             
+             # Inicializar o valor na session_state se não existir
+             if 'r_value' not in st.session_state:
+                st.session_state.r_value = suggested_r
+             
+             r = st.slider(
+                "Raio de conexão (r)", 
+                min_value=1.0, 
+                max_value=float(max_theoretical_r),
+                value=st.session_state.r_value,
+                step=0.1,
+                key="r_value",
+                on_change=update_d_from_r,
+                help=f"""Define a distância máxima em graus para conexão direta entre cidades.
+
+                    Valores recomendados:
+                    • r < 1° (até ~111 km): Apenas cidades muito próximas
+                    • 1° ≤ r ≤ 5° (~111-555 km): Cidades regionalmente próximas
+                    • 5° < r ≤ 10° (~555-1110 km): Cidades em estados vizinhos
+                    • 10° < r ≤ 20° (~1110-2220 km): Conexões de longa distância
+                    • r > 20°: Não recomendado - conexões entre cidades muito distantes
+
+                    O valor máximo teórico é {max_theoretical_r:.1f} graus, que corresponde à maior distância possível 
+                    entre quaisquer duas cidades no conjunto de dados. No entanto, valores acima de 20° podem resultar 
+                    em caminhos diretos irrealistas entre cidades muito distantes.
+                    
+                    💡 Dica: Um bom valor inicial é aproximadamente 1/3 da distância em linha reta entre origem e destino."""
+             )
+             
+             # Converter para km para referência
+             r_in_km = r * 111
+             st.caption(f"Raio selecionado: {r:.1f}° ≈ {r_in_km:.0f} km")
+          else:
+             r = None
+             
+       with col2:
+          if connection_type in ["Distância em km (d)", "Ambos"]:
+             # Converter valor em graus para km para um valor padrão inicial
+             default_d_value = max(100.0, min(333.0, dist_haversine / 3))
+             
+             # Inicializar o valor na session_state se não existir
+             if 'd_value' not in st.session_state:
+                st.session_state.d_value = default_d_value
+                
+             # Se os sliders estiverem sincronizados, usar o valor de r convertido
+             if st.session_state.link_sliders and 'r_value' in st.session_state and connection_type == "Ambos":
+                st.session_state.d_value = st.session_state.r_value * 111
+             
+             d = st.slider(
+                "Distância máxima em km (d)", 
+                min_value=100.0, 
+                max_value=float(max_theoretical_km),
+                value=st.session_state.d_value,
+                step=50.0,
+                key="d_value",
+                on_change=update_r_from_d,
+                disabled=st.session_state.link_sliders and connection_type == "Ambos",
+                help=f"""Define a distância máxima em quilômetros para conexão direta entre cidades.
+
+                    Valores recomendados:
+                    • d < 100 km: Apenas cidades muito próximas (mesma região metropolitana)
+                    • 100 ≤ d ≤ 500 km: Cidades na mesma região
+                    • 500 < d ≤ 1000 km: Cidades em estados vizinhos
+                    • 1000 < d ≤ 2000 km: Conexões de longa distância
+                    • d > 2000 km: Não recomendado - conexões entre cidades muito distantes
+
+                    O valor máximo teórico é {max_theoretical_km:.0f} km, que corresponde à maior distância possível 
+                    entre quaisquer duas cidades no conjunto de dados. No entanto, valores acima de 2000 km podem resultar 
+                    em caminhos diretos irrealistas entre cidades muito distantes.
+                    
+                    💡 Dica: Um bom valor inicial é aproximadamente 1/3 da distância em linha reta entre origem e destino."""
+             )
+             
+             # Adicionar nota explicativa quando o slider estiver desativado
+             if st.session_state.link_sliders and connection_type == "Ambos":
+                st.caption("⚠️ Slider desativado porque a sincronização está ativa. Ajuste o raio para alterar a distância.")
+    # Adicionar botão para procurar rota
+    col_button = st.columns(3)
+    with col_button[1]:
+        search_route = st.button(
+            "🔍 Procurar Rota",
+            help="Clique para encontrar a melhor rota entre as cidades selecionadas",
+            use_container_width=True,
+            type="primary"
+        )
+    
+    # Lógica para processar a busca quando o botão for clicado
+    if search_route:
+        # Iniciar o temporizador para medir o tempo de processamento
+        start_time = time.time()
+        
+        # Mostrar barra de progresso
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        try:
+            status_text.text("Criando grafo de conectividade...")
             
-            # Mostrar informações sobre o tipo de conexão utilizado
-            connection_info = ""
+            # Atualizar barra de progresso
+            progress_bar.progress(10)
+            
+            # Construir grafo baseado no tipo de conexão selecionado
             if connection_type == "Raio em graus (r)":
-                connection_info = f"Conexões baseadas em raio de {r} graus ({r*111:.0f} km)"
+                G = graph_utils.build_graph_from_df(cities_df, r)
+                connection_parameter = r
+                connection_unit = "graus"
             elif connection_type == "Distância em km (d)":
-                connection_info = f"Conexões baseadas em distância máxima de {d} km ({d/111:.2f} graus)"
+                d_km = d  # Já está em km
+                G = graph_utils.build_graph_from_df_km(cities_df, d_km)
+                connection_parameter = d_km
+                connection_unit = "km"
             else:  # Ambos
-                connection_info = f"Conexões baseadas em raio de {r} graus ({r*111:.0f} km) E distância máxima de {d} km"
+                G = graph_utils.build_graph(cities_df, r=r, d=d)
+                connection_parameter = f"{r} graus / {d} km"
+                connection_unit = "mistos"
             
-            st.write(f"**Tipo de conexão utilizado:** {connection_info}")
+            # Verificar se as cidades estão no grafo
+            if start_city not in G.nodes or end_city not in G.nodes:
+                error_msg = "Uma ou ambas as cidades selecionadas não estão no grafo. "
+                if start_city not in G.nodes:
+                    error_msg += f"'{start_city}' está isolada. "
+                if end_city not in G.nodes:
+                    error_msg += f"'{end_city}' está isolada. "
+                error_msg += f"Tente aumentar o valor do raio de conexão para incluir mais cidades."
+                st.error(error_msg)
+                progress_bar.progress(100)
+                return
             
-            # Visualizar o grafo
-            st.subheader("Visualização do Grafo")
-            st.markdown("""
-            <div class="map-container">
-            A imagem abaixo mostra a rede de conexões entre cidades. 
-            - **Nós**: Representam cidades 
-            - **Arestas**: Representam conexões diretas possíveis
-            - **Tamanho dos nós**: Proporcional à população da cidade
-            </div>
-            """, unsafe_allow_html=True)
-            
-            fig = map_display.display_graph_visualization(G, cities_df, r=r, d=d)
-            st.pyplot(fig)
-            
-            # Estatísticas do grafo
-            st.write(f"**Estatísticas da Rede**:")
-            st.write(f"- Número de cidades (nós): {G.number_of_nodes():,}")
-            st.write(f"- Número de conexões (arestas): {G.number_of_edges():,}")
-            st.write(f"- Densidade da rede: {nx.density(G):.4f}")
+            # Atualizar barra de progresso
+            progress_bar.progress(30)
+            status_text.text("Verificando conectividade...")
             
             # Verificar se existe um caminho entre as cidades
-            path_exists = nx.has_path(G, start_city, end_city)
-            if not path_exists:
-                st.error(f"Não foi possível encontrar um caminho entre {start_city} e {end_city} com os parâmetros atuais.")
+            if not nx.has_path(G, start_city, end_city):
+                st.warning(f"Não existe caminho entre {start_city} e {end_city} com o raio de conexão atual ({connection_parameter} {connection_unit}). Tente aumentar o valor do raio.")
                 
                 # Sugerir um valor de r adequado
                 components = list(nx.connected_components(G))
@@ -346,401 +615,399 @@ def app():
                     elif connection_type == "Distância em km (d)":
                         min_d = dist_haversine
                         st.info(f"Sugestão: Tente uma distância de pelo menos {min_d:.0f} km para ter uma conexão direta entre a origem e o destino.")
+                
+                progress_bar.progress(100)
                 return
-
-            # Resultados
-            bfs_path, bfs_distance = None, None
-            a_star_path, a_star_distance = None, None
-            fuzzy_path, fuzzy_distance, fuzzy_certainty = None, None, None
             
-            # Executar os algoritmos selecionados
-            if algorithm_choice in ["Todos", "BFS (Busca em Largura)"]:
-                progress_bar.update_progress(0.25, "Executando BFS...")
-                bfs_path, bfs_distance = algorithms.breadth_first_search(G, start_city, end_city)
+            # Atualizar barra de progresso
+            progress_bar.progress(50)
+            status_text.text("Executando algoritmos de busca...")
             
-            if algorithm_choice in ["Todos", "A* (A-Estrela)"]:
-                progress_bar.update_progress(0.50, "Executando A*...")
-                a_star_path, a_star_distance = algorithms.a_star_search(G, cities_df, start_city, end_city)
+            # Execução dos algoritmos selecionados
+            results = {}
             
-            if algorithm_choice in ["Todos", "Busca Fuzzy"]:
-                progress_bar.update_progress(0.75, "Executando Busca Fuzzy...")
-                fuzzy_path, fuzzy_distance, fuzzy_certainty = algorithms.fuzzy_search(G, cities_df, start_city, end_city, r=r, d=d)
-            
-            progress_bar.update_progress(1.0, "Concluído!")
-
-            # Função para calcular a distância total em km de um caminho
-            def calcular_distancia_km_caminho(path):
-                if not path or len(path) < 2:
-                    return 0
+            # Usar diretamente os checkboxes da session_state para determinar quais algoritmos executar
+            if st.session_state.use_bfs:
+                status_text.text("Executando BFS...")
+                bfs_result = algorithms.bfs_search(G, cities_df, start_city, end_city)
+                if bfs_result is not None:
+                    results["BFS"] = bfs_result
                 
-                distancia_total = 0
-                for i in range(len(path)-1):
-                    cidade1 = cities_df[cities_df['city'] == path[i]].iloc[0]
-                    cidade2 = cities_df[cities_df['city'] == path[i+1]].iloc[0]
-                    distancia_total += graph_utils.calculate_haversine_distance(cidade1, cidade2)
+            if st.session_state.use_dfs:
+                status_text.text("Executando DFS...")
+                dfs_result = algorithms.dfs_search(G, cities_df, start_city, end_city)
+                if dfs_result is not None:
+                    results["DFS"] = dfs_result
                 
-                return distancia_total
+            if st.session_state.use_astar:
+                status_text.text("Executando A*...")
+                a_star_result = algorithms.a_star_search(G, cities_df, start_city, end_city)
+                if a_star_result is not None:
+                    results["A*"] = a_star_result
+                
+            if st.session_state.use_fuzzy:
+                status_text.text("Executando Busca Fuzzy...")
+                fuzzy_result = algorithms.fuzzy_search(G, cities_df, start_city, end_city)
+                if fuzzy_result is not None:
+                    results["Fuzzy"] = fuzzy_result
+                
+            if st.session_state.use_dijkstra:
+                status_text.text("Executando Dijkstra...")
+                dijkstra_result = algorithms.dijkstra_search(G, cities_df, start_city, end_city)
+                if dijkstra_result is not None:
+                    results["Dijkstra"] = dijkstra_result
+            
+            # Verificar se algum algoritmo conseguiu encontrar um caminho
+            if not results:
+                st.warning("Nenhum dos algoritmos conseguiu encontrar um caminho válido entre as cidades selecionadas. Tente aumentar o raio de conexão.")
+                progress_bar.progress(100)
+                return
+            
+            # Atualizar barra de progresso
+            progress_bar.progress(80)
+            status_text.text("Gerando visualização...")
+            
+            # Calcular tempo de processamento
+            end_time = time.time()
+            processing_time = end_time - start_time
+            
+            # Atualizar a barra de progresso e remover mensagem de status
+            progress_bar.progress(100)
+            status_text.empty()
+            
+            # Verificação adicional para garantir que os resultados tenham os valores esperados
+            for algo, resultado in list(results.items()):
+                if not isinstance(resultado, tuple) or len(resultado) < 2:
+                    st.warning(f"O algoritmo {algo} retornou um resultado em formato inválido. Este algoritmo será ignorado.")
+                    del results[algo]
+                    
+            if not results:
+                st.warning("Nenhum algoritmo conseguiu encontrar um caminho válido após validação dos resultados.")
+                return
+            
+            # Passar os parâmetros r e d apenas se estiverem definidos
+            d_param = d if connection_type in ["Distância em km (d)", "Ambos"] else None
+            r_param = r if connection_type in ["Raio em graus (r)", "Ambos"] else None
+            
+            fig = map_display.display_graph_visualization(G, cities_df, r=r_param, d=d_param)
 
-            # Criação de um dicionário para armazenar os resultados
-            results = {
+                
+            # --- SEÇÃO DE COMPARAÇÃO VISUAL ENTRE ALGORITMOS ---
+            st.markdown("""
+            <div style="border-top: 1px solid rgba(49, 51, 63, 0.2); margin: 1em 0;"></div>
+            <h2 style="text-align: center; margin-bottom: 1em;">🔍 Resultados</h2>
+            """, unsafe_allow_html=True)
+            
+            # Mostrar mapa comparativo com todas as rotas e grafo lado a lado          
+            # Usar colunas para colocar o mapa e o grafo lado a lado
+            col_map, col_graph = st.columns(2)
+            
+            with col_map:
+                st.markdown("#### Mapa de Rotas")
+                st.markdown("As rotas estão representadas em cores diferentes: BFS (azul), DFS (roxo), A* (verde), Fuzzy (vermelho) e Dijkstra (laranja).")
+                map_container = map_display.display_all_routes_map(cities_df, results)
+                st.caption("**Dica**: Utilize o controle de camadas no canto superior direito para exibir/ocultar rotas e cidades.")
+                
+            with col_graph:
+                st.markdown("#### Visualização do Grafo")
+                st.markdown("A imagem abaixo mostra a rede de conexões entre cidades. **Nós**: Representam cidades - "
+                "**Arestas**: Representam conexões diretas possíveis - **Tamanho dos nós**: Proporcional à população da cidade")
+                # Define figure size to match the map dimensions (using the same height/width ratio)
+                graph_fig = map_display.display_graph_visualization(
+                    G, 
+                    cities_df, 
+                    r if connection_type in ["Raio em graus (r)", "Ambos"] else None,
+                    d if connection_type in ["Distância em km (d)", "Ambos"] else None
+                )
+                st.pyplot(graph_fig)
+                               
+                st.markdown(f"""
+                - Número de cidades (nós): {len(G.nodes())}
+                - Número de conexões (arestas): {len(G.edges())}
+                - Densidade da rede: {nx.density(G):.4f}
+                """)
+                
+            # --- SEÇÃO DE ESTATÍSTICAS COMPARATIVAS ---
+            st.subheader("Comparação dos Resultados")
+            
+            # Coletar dados para tabela comparativa
+            comparison_data = []
+            for algo, resultado in results.items():
+                path = resultado[0]
+                distance = resultado[1]
+                # Verificar se temos dados de tempo de execução (3º elemento)
+                elapsed_time = resultado[2] if len(resultado) > 2 else 0.0
+                
+                # Para o Fuzzy, verificar se temos dados de certeza (4º elemento)
+                certainty = ""
+                if algo == "Fuzzy" and len(resultado) > 3:
+                    certainty = f"{resultado[3]*100:.1f}%"
+                
+                # Calcular a eficiência correta: ((distância em linha reta / distância real) * 100 )
+                # Valores mais próximos de 100% são melhores (rota mais direta)
+                km_distance = distance * 111
+                efficiency = (dist_haversine / km_distance) * 100 if km_distance > 0 else 0
+                
+                # A eficiência deve ser naturalmente <= 100% porque a distância em linha reta
+                # é sempre menor ou igual à distância real do caminho
+                # Nenhuma limitação artificial é necessária aqui
+                
+                # Calcular população total da rota
+                total_population = 0
+                for city in path:
+                    city_data = cities_df[cities_df['city'] == city]
+                    if not city_data.empty:
+                        total_population += int(city_data.iloc[0]['population'])
+                
+                comparison_data.append({
+                    "Algoritmo": algo,
+                    "Distância": f"{distance:.2f}°",
+                    "Distância (km)": f"{distance*111:.0f} km",
+                    "Cidades": len(path),
+                    "Cidades intermediárias": len(path) - 2 if len(path) >= 2 else 0,
+                    "Eficiência": f"{efficiency:.2f}%",
+                    "População Total": f"{total_population:,}".replace(",", "."),
+                    "Tempo de execução": f"{elapsed_time:.2f} ms",
+                    "Certeza (Fuzzy)": certainty
+                })
+            
+            # Mostrar tabela comparativa
+            st.table(pd.DataFrame(comparison_data))
+
+                        # Adicionar um expander para explicar o que é eficiência
+            with st.expander("ℹ️ Entendendo a medida de Eficiência"):
+                st.markdown("""
+                ### Medida de Eficiência das Rotas
+             
+                A **eficiência** de uma rota é calculada como a proporção entre:
+                
+                ```
+                Eficiência = (Distância em linha reta / Distância real da rota) × 100%
+                ```
+                
+                #### Interpretação:
+                - **100%**: Rota perfeitamente eficiente (segue a linha reta ideal)
+                - **50%**: A rota é duas vezes mais longa que a linha reta
+                - **25%**: A rota é quatro vezes mais longa que a linha reta
+                
+                Valores mais altos indicam rotas mais eficientes que se aproximam da distância ideal em linha reta.
+                
+                A distância em linha reta é calculada usando a fórmula de Haversine, que considera a curvatura da Terra.
+                """)
+            
+            
+            # --- VISUALIZAÇÕES GRÁFICAS COMPARATIVAS ---
+            st.subheader("Comparação Visual")
+            
+            # Criar gráficos comparativos (2x2 layout)
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Gráfico de distâncias
+                fig_dist = plt.figure(figsize=(4, 3))
+                algos = [data["Algoritmo"] for data in comparison_data]
+                distances = [float(data["Distância"].replace("°", "")) * 111 for data in comparison_data]
+                
+                plt.bar(algos, distances, color=['blue', 'purple', 'green', 'red', 'orange'])
+                plt.ylabel("Distância (km)")
+                plt.title("Comparação de Distância Total")
+                plt.xticks(rotation=45)
+                
+                for i, d in enumerate(distances):
+                    plt.text(i, d + 50, f"{d:.0f} km", ha='center')
+                    
+                plt.tight_layout()
+                st.pyplot(fig_dist)
+                
+                # Gráfico de tempo de execução
+                fig_time = plt.figure(figsize=(4, 3))
+                times = [float(data["Tempo de execução"].replace(" ms", "")) for data in comparison_data]
+                
+                plt.bar(algos, times, color=['blue', 'purple', 'green', 'red', 'orange'])
+                plt.ylabel("Tempo (ms)")
+                plt.title("Tempo de execução por algoritmo")
+                plt.xticks(rotation=45)
+                
+                for i, t in enumerate(times):
+                    plt.text(i, t + 0.05, f"{t:.2f} ms", ha='center')
+                    
+                plt.tight_layout()
+                st.pyplot(fig_time)
+            
+            with col2:
+                # Gráfico de número de cidades
+                fig_cities = plt.figure(figsize=(4, 3))
+                city_counts = [data["Cidades"] for data in comparison_data]
+                
+                plt.bar(algos, city_counts, color=['blue', 'purple', 'green', 'red', 'orange'])
+                plt.ylabel("Número de cidades")
+                plt.title("Comparação de número de cidades")
+                plt.xticks(rotation=45)
+                
+                for i, c in enumerate(city_counts):
+                    plt.text(i, c + 0.3, str(c), ha='center')
+                    
+                plt.tight_layout()
+                st.pyplot(fig_cities)
+                
+                # NOVO: Gráfico de população total por rota
+                fig_pop = plt.figure(figsize=(4, 3))
+                populations = [int(data["População Total"].replace(".", "")) / 1000000 for data in comparison_data]
+                
+                plt.bar(algos, populations, color=['blue', 'purple', 'green', 'red', 'orange'])
+                plt.ylabel("População (milhões)")
+                plt.title("População total das cidades por rota")
+                plt.xticks(rotation=45)
+                
+                for i, p in enumerate(populations):
+                    plt.text(i, p + 0.2, f"{p:.1f}M", ha='center')
+                    
+                plt.tight_layout()
+                st.pyplot(fig_pop)
+            
+            # Identificar algoritmo mais rápido e mais lento
+            if times:
+                min_time_idx = times.index(min(times))
+                max_time_idx = times.index(max(times))
+                min_algo = algos[min_time_idx]
+                max_algo = algos[max_time_idx]
+                
+                st.info(f"O algoritmo {min_algo} foi o mais rápido ({times[min_time_idx]:.2f} ms).")
+                st.info(f"O algoritmo {max_algo} foi o mais lento ({times[max_time_idx]:.2f} ms).")
+            
+            # --- SEÇÃO DE RESULTADOS DETALHADOS ---
+            st.markdown("""
+            <div style="border-top: 1px solid rgba(49, 51, 63, 0.2); margin: 1em 0;"></div>
+            <h2 style="text-align: center; margin-bottom: 1em;">🛣️ Detalhes das Rotas</h2>
+            """, unsafe_allow_html=True)
+            
+            # Exibir resultados em abas
+            tabs = st.tabs([f"{algo} ({len(resultado[0])} cidades)" for algo, resultado in results.items()])
+            
+            for i, (algo, resultado) in enumerate(results.items()):
+                # Extrair os valores do resultado
+                path = resultado[0]  # O caminho é sempre o primeiro elemento
+                distance = resultado[1]  # A distância é sempre o segundo elemento
+                
+                with tabs[i]:
+                    st.subheader(f"Rota encontrada usando {algo}")
+                    
+                    # Detalhes da rota
+                    distance_km = distance * 111 if distance else 0  # Conversão aproximada para km
+                    # Calcular a eficiência correta com a mesma lógica da tabela comparativa
+                    km_distance = distance * 111
+                    efficiency = (dist_haversine / km_distance) * 100 if km_distance > 0 else 0
+                    efficiency = min(100, efficiency)  # Limitar a 100% para evitar valores irrealistas
+                    
+                    # Adicionar informações de certeza para a busca fuzzy
+                    additional_info = ""
+                    if algo == "Fuzzy" and len(resultado) > 3:
+                        certainty = resultado[3]
+                        additional_info = f'<div class="result-item"><span class="result-label">Certeza da rota</span><span class="result-value">{certainty*100:.1f}%</span></div>'
+                    
+                    st.markdown(f"""
+                    <div class="result-summary">
+                        <div class="result-item">
+                            <span class="result-label">Cidades visitadas</span>
+                            <span class="result-value">{len(path)}</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Distância total</span>
+                            <span class="result-value">{distance:.2f}° ({distance_km:.0f} km)</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Eficiência</span>
+                            <span class="result-value">{efficiency:.2f}% da linha reta</span>
+                        </div>
+                        {additional_info}
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Layout de duas colunas para a lista de cidades e o mapa
+                    col1, col2 = st.columns([1, 2])
+                    
+                    with col1:
+                        # Lista de cidades no caminho
+                        st.markdown("##### Cidades no caminho")
+                        cities_in_path = []
+                        for city in path:
+                            city_info = cities_df[cities_df['city'] == city].iloc[0]
+                            cities_in_path.append({
+                                "Cidade": f"{city}, {city_info['state']}",
+                                "População": int(city_info['population']),
+                                "Ranking": city_info['rank']
+                            })
+                        
+                        st.table(pd.DataFrame(cities_in_path))
+                    
+                    with col2:
+                        # Mapa da rota - agora ocupa toda a largura da coluna
+                        st.markdown("##### Visualização da rota no mapa")
+                        route_map = map_display.display_path_on_map(cities_df, path, f"Rota encontrada usando {algo}")
+                        # O mapa já é renderizado na função display_path_on_map
+            
+            # Salvar resultados no histórico da sessão
+            history_entry = {
                 'timestamp': datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
                 'start_city': start_city,
                 'end_city': end_city,
-                'params': connection_info,
+                'connection_type': connection_type,
+                'connection_parameter': connection_parameter,
+                'connection_unit': connection_unit,
                 'algorithms': {}
             }
+            
+            for algo, resultado in results.items():
+                path = resultado[0]
+                distance = resultado[1]
+                
+                # Verificar se temos dados de tempo de execução (3º elemento)
+                elapsed_time = resultado[2] if len(resultado) > 2 else 0.0
+                
+                # Para o Fuzzy, verificar se temos dados de certeza (4º elemento)
+                certainty = None
+                if algo == "Fuzzy" and len(resultado) > 3:
+                    certainty = resultado[3]
+                
+                history_entry['algorithms'][algo] = {
+                    'path': path,
+                    'distance_degrees': distance,
+                    'distance_km': distance * 111,
+                    'cities_count': len(path),
+                    'elapsed_time': elapsed_time,
+                    'certainty': certainty
+                }
+            
+            # Adicionar ao histórico da sessão
+            st.session_state.search_history.append(history_entry)
+            
+            # Mostrar histórico de buscas
+            with st.expander("📜 Histórico de Buscas", expanded=False):                
+                # Mostrar apenas as últimas 5 buscas (excluindo a atual)
+                if len(st.session_state.search_history) > 1:
+                    history = st.session_state.search_history[:-1]  # Excluir a busca atual
+                    history.reverse()  # Mais recentes primeiro
+                    
+                    for i, search in enumerate(history[:5]):  # Mostrar apenas as 5 mais recentes
+                        st.markdown(f"#### Busca {i+1}: {search['start_city']} → {search['end_city']} ({search['timestamp']})")
+                        st.write(f"**Tipo de conexão**: {search['connection_type']}")
+                        st.write(f"**Parâmetro de conexão**: {search['connection_parameter']} {search['connection_unit']}")
+                        
+                        # Mostrar resultados resumidos para cada algoritmo
+                        for alg_name, alg_results in search['algorithms'].items():
+                            st.write(f"**{alg_name}**: {alg_results['distance_km']:.0f} km, {alg_results['cities_count']} cidades")
+                            if alg_results['certainty'] is not None:
+                                st.write(f"Certeza: {alg_results['certainty']:.2f}")
+                        
+                        # Adicionar uma linha divisória entre as buscas
+                        if i < min(4, len(history[:5])-1):  # Não adicionar após o último item
+                            st.markdown("---")
+                else:
+                    st.info("Nenhuma busca anterior registrada.")
+            
+        except Exception as e:
+            st.error(f"Erro ao processar a rota: {str(e)}")
+            import traceback
 
-            paths_to_display = []
-            
-            if algorithm_choice in ["Todos", "BFS (Busca em Largura)"]:
-                if bfs_path:
-                    bfs_km = calcular_distancia_km_caminho(bfs_path)
-                    results['algorithms']['BFS'] = {
-                        'path': bfs_path,
-                        'distance_degrees': bfs_distance,
-                        'distance_km': bfs_km,
-                        'cities_count': len(bfs_path)
-                    }
-                    paths_to_display.append(bfs_path)
-                else:
-                    results['algorithms']['BFS'] = None
-                    paths_to_display.append([])
-
-            if algorithm_choice in ["Todos", "A* (A-Estrela)"]:
-                if a_star_path:
-                    astar_km = calcular_distancia_km_caminho(a_star_path)
-                    results['algorithms']['A*'] = {
-                        'path': a_star_path,
-                        'distance_degrees': a_star_distance,
-                        'distance_km': astar_km,
-                        'cities_count': len(a_star_path)
-                    }
-                    paths_to_display.append(a_star_path)
-                else:
-                    results['algorithms']['A*'] = None
-                    paths_to_display.append([])
-
-            if algorithm_choice in ["Todos", "Busca Fuzzy"]:
-                if fuzzy_path:
-                    fuzzy_km = calcular_distancia_km_caminho(fuzzy_path)
-                    results['algorithms']['Fuzzy'] = {
-                        'path': fuzzy_path,
-                        'distance_degrees': fuzzy_distance,
-                        'distance_km': fuzzy_km,
-                        'cities_count': len(fuzzy_path),
-                        'certainty': fuzzy_certainty
-                    }
-                    paths_to_display.append(fuzzy_path)
-                else:
-                    results['algorithms']['Fuzzy'] = None
-                    paths_to_display.append([])
-            
-            # Salvar resultados no histórico da sessão
-            st.session_state.search_history.append(results)
-            
-            # Exibir resultados detalhados em um sistema de abas
-            st.header("Resultados da Busca")
-            
-            # Definir abas para os resultados
-            tabs = []
-            tab_titles = []
-            
-            # Sempre adicionar a aba principal
-            tab_titles.append("Rotas Encontradas")
-            
-            # Adicionar as outras abas conforme os algoritmos utilizados
-            if algorithm_choice in ["Todos", "BFS (Busca em Largura)"] and bfs_path:
-                tab_titles.append("BFS")
-                
-            if algorithm_choice in ["Todos", "A* (A-Estrela)"] and a_star_path:
-                tab_titles.append("A*")
-                
-            if algorithm_choice in ["Todos", "Busca Fuzzy"] and fuzzy_path:
-                tab_titles.append("Fuzzy")
-            
-            # Se mais de um algoritmo foi executado, adicionar aba de comparação
-            if (algorithm_choice == "Todos" and 
-                sum(1 for p in [bfs_path, a_star_path, fuzzy_path] if p) > 1):
-                tab_titles.append("Comparação")
-            
-            # Adicionar aba para estatísticas
-            tab_titles.append("Estatísticas")
-            
-            # Criar as abas
-            tabs = st.tabs(tab_titles)
-            
-            # Aba principal - Rotas Encontradas
-            with tabs[0]:
-                st.markdown("""
-                As rotas encontradas são mostradas no mapa abaixo. Você pode comparar as diferentes 
-                abordagens e seus resultados nas outras abas.
-                """)
-                
-                # Exibir mapa
-                st.subheader("🗺️ Visualização das Rotas no Mapa")
-                st.markdown("""
-                <div class="map-container">
-                O mapa abaixo mostra as rotas encontradas pelos algoritmos selecionados. 
-                - **Azul**: Rota do BFS
-                - **Verde**: Rota do A*
-                - **Vermelho**: Rota do Fuzzy Search
-                
-                Você pode usar o zoom e arrastar para explorar melhor o mapa.
-                </div>
-                """, unsafe_allow_html=True)
-                
-                map_display.display_route_map(cities_df, paths_to_display)
-            
-            # Contador para acompanhar o índice da aba atual
-            tab_index = 1
-                
-            # Aba BFS
-            if "BFS" in tab_titles:
-                with tabs[tab_index]:
-                    st.subheader("🔄 Busca em Largura (BFS)")
-                    st.write("""
-                    A BFS encontra o caminho com o menor número de cidades intermediárias, 
-                    mas não necessariamente a menor distância total.
-                    """)
-                    st.write(f"**Caminho BFS:** { ' → '.join(bfs_path) }")
-                    st.write(f"**Distância BFS:** {bfs_distance:.2f} graus (aprox. {results['algorithms']['BFS']['distance_km']:.0f} km)")
-                    st.write(f"**Número de cidades no caminho:** {len(bfs_path)}")
-                    
-                    # Mostrar detalhes do caminho
-                    st.subheader("📋 Detalhes das Cidades no Caminho BFS")
-                    path_cities = cities_df[cities_df['city'].isin(bfs_path)].sort_values(
-                        by='city', 
-                        key=lambda x: pd.Series(x).map({city: i for i, city in enumerate(bfs_path)})
-                    )
-                    display_cols = ['city', 'state', 'population', 'growth_from_2000_to_2013', 'latitude', 'longitude']
-                    st.dataframe(path_cities[display_cols], use_container_width=True)
-                    
-                tab_index += 1
-            
-            # Aba A*
-            if "A*" in tab_titles:
-                with tabs[tab_index]:
-                    st.subheader("⭐ A* (A-Estrela)")
-                    st.write("""
-                    O A* combina a distância percorrida com uma estimativa da distância restante.
-                    Geralmente encontra o caminho mais curto em termos de distância total.
-                    """)
-                    st.write(f"**Caminho A*:** { ' → '.join(a_star_path) }")
-                    st.write(f"**Distância A*:** {a_star_distance:.2f} graus (aprox. {results['algorithms']['A*']['distance_km']:.0f} km)")
-                    st.write(f"**Número de cidades no caminho:** {len(a_star_path)}")
-                    
-                    # Mostrar detalhes do caminho
-                    st.subheader("📋 Detalhes das Cidades no Caminho A*")
-                    path_cities = cities_df[cities_df['city'].isin(a_star_path)].sort_values(
-                        by='city', 
-                        key=lambda x: pd.Series(x).map({city: i for i, city in enumerate(a_star_path)})
-                    )
-                    display_cols = ['city', 'state', 'population', 'growth_from_2000_to_2013', 'latitude', 'longitude']
-                    st.dataframe(path_cities[display_cols], use_container_width=True)
-                    
-                tab_index += 1
-                
-            # Aba Fuzzy
-            if "Fuzzy" in tab_titles:
-                with tabs[tab_index]:
-                    st.subheader("🧩 Busca Fuzzy")
-                    st.write("""
-                    A Busca Fuzzy lida com incertezas nas conexões. O valor de certeza indica a 
-                    confiabilidade da rota, com 1.0 sendo completamente confiável e valores menores 
-                    indicando rotas menos confiáveis, mas potencialmente úteis.
-                    """)
-                    st.write(f"**Caminho Fuzzy:** { ' → '.join(fuzzy_path) }")
-                    st.write(f"**Distância Fuzzy:** {fuzzy_distance:.2f} graus (aprox. {results['algorithms']['Fuzzy']['distance_km']:.0f} km)")
-                    st.write(f"**Certeza Fuzzy:** {fuzzy_certainty:.2f} (quanto maior, mais confiável)")
-                    st.write(f"**Número de cidades no caminho:** {len(fuzzy_path)}")
-                    
-                    # Explicar o valor de certeza
-                    if fuzzy_certainty < 0.3:
-                        st.warning("A certeza baixa sugere que este caminho pode não ser ideal ou confiável.")
-                    elif fuzzy_certainty > 0.7:
-                        st.success("A alta certeza sugere que este caminho é altamente confiável.")
-                        
-                    # Mostrar detalhes do caminho
-                    st.subheader("📋 Detalhes das Cidades no Caminho Fuzzy")
-                    path_cities = cities_df[cities_df['city'].isin(fuzzy_path)].sort_values(
-                        by='city', 
-                        key=lambda x: pd.Series(x).map({city: i for i, city in enumerate(fuzzy_path)})
-                    )
-                    display_cols = ['city', 'state', 'population', 'growth_from_2000_to_2013', 'latitude', 'longitude']
-                    st.dataframe(path_cities[display_cols], use_container_width=True)
-                    
-                tab_index += 1
-                
-            # Aba de Comparação
-            if "Comparação" in tab_titles:
-                with tabs[tab_index]:
-                    st.subheader("📊 Comparação entre Algoritmos")
-                    
-                    # Criar dataframe para comparação
-                    comparison_data = []
-                    
-                    if bfs_path:
-                        comparison_data.append({
-                            "Algoritmo": "BFS", 
-                            "Distância_valor": results['algorithms']['BFS']['distance_km'],
-                            "Distância": f"{bfs_distance:.2f} graus",
-                            "Distância (km)": f"{results['algorithms']['BFS']['distance_km']:.0f} km",
-                            "Cidades": len(bfs_path),
-                            "Cidades intermediárias": len(bfs_path) - 2
-                        })
-                    
-                    if a_star_path:
-                        comparison_data.append({
-                            "Algoritmo": "A*", 
-                            "Distância_valor": results['algorithms']['A*']['distance_km'],
-                            "Distância": f"{a_star_distance:.2f} graus",
-                            "Distância (km)": f"{results['algorithms']['A*']['distance_km']:.0f} km",
-                            "Cidades": len(a_star_path),
-                            "Cidades intermediárias": len(a_star_path) - 2
-                        })
-                    
-                    if fuzzy_path:
-                        comparison_data.append({
-                            "Algoritmo": "Fuzzy", 
-                            "Distância_valor": results['algorithms']['Fuzzy']['distance_km'],
-                            "Distância": f"{fuzzy_distance:.2f} graus",
-                            "Distância (km)": f"{results['algorithms']['Fuzzy']['distance_km']:.0f} km",
-                            "Cidades": len(fuzzy_path),
-                            "Cidades intermediárias": len(fuzzy_path) - 2,
-                            "Certeza": f"{fuzzy_certainty:.2f}"
-                        })
-                    
-                    if comparison_data:
-                        # Criar cópia sem a coluna Distância_valor para exibição
-                        display_data = [{k: v for k, v in d.items() if k != 'Distância_valor'} for d in comparison_data]
-                        st.table(pd.DataFrame(display_data))
-                        
-                        # Determinar o algoritmo mais eficiente usando o valor numérico
-                        best_distance = min([d['Distância_valor'] for d in comparison_data])
-                        best_algorithm = [d['Algoritmo'] for d in comparison_data if d['Distância_valor'] == best_distance][0]
-                        st.success(f"Para este caso específico, o algoritmo **{best_algorithm}** encontrou o caminho mais curto.")
-                        
-                        # Adicionar gráficos de comparação
-                        st.subheader("Comparação Visual")
-                        
-                        # Gráfico de barras para distância
-                        fig1, ax1 = plt.subplots(figsize=(10, 6))
-                        algorithms = [d["Algoritmo"] for d in comparison_data]
-                        distances = [d["Distância_valor"] for d in comparison_data]
-                        colors = ["#5470C6", "#91CC75", "#EE6666"][:len(algorithms)]
-                        
-                        ax1.bar(algorithms, distances, color=colors)
-                        ax1.set_ylabel("Distância (km)")
-                        ax1.set_title("Comparação de distância total por algoritmo")
-                        ax1.grid(axis='y', alpha=0.3)
-                        
-                        for i, v in enumerate(distances):
-                            ax1.text(i, v + 50, f"{v:.0f} km", ha='center', fontweight='bold')
-                            
-                        st.pyplot(fig1)
-                        
-                        # Gráfico de barras para número de cidades
-                        fig2, ax2 = plt.subplots(figsize=(10, 6))
-                        city_counts = [d["Cidades"] for d in comparison_data]
-                        
-                        ax2.bar(algorithms, city_counts, color=colors)
-                        ax2.set_ylabel("Número de cidades")
-                        ax2.set_title("Comparação de número de cidades no caminho")
-                        ax2.grid(axis='y', alpha=0.3)
-                        
-                        for i, v in enumerate(city_counts):
-                            ax2.text(i, v + 0.5, str(v), ha='center', fontweight='bold')
-                            
-                        st.pyplot(fig2)
-                    
-                tab_index += 1
-                
-            # Aba de Estatísticas
-            with tabs[tab_index]:
-                st.subheader("📈 Estatísticas Detalhadas")
-                
-                # Se temos pelo menos um caminho
-                if any(paths_to_display):
-                    # Escolher o primeiro caminho válido para estatísticas
-                    valid_path = next((p for p in paths_to_display if p), None)
-                    
-                    if valid_path:
-                        # Estatísticas das cidades no caminho
-                        path_cities = cities_df[cities_df['city'].isin(valid_path)]
-                        
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.metric("População total nas cidades do caminho", 
-                                      f"{path_cities['population'].sum():,}")
-                            
-                            # Média de população
-                            avg_pop = path_cities['population'].mean()
-                            st.metric("População média por cidade", 
-                                      f"{avg_pop:,.0f}")
-                        
-                        with col2:
-                            # Encontrar a cidade mais populosa
-                            most_populous = path_cities.loc[path_cities['population'].idxmax()]
-                            st.metric("Cidade mais populosa no caminho", 
-                                      f"{most_populous['city']}", 
-                                      f"{most_populous['population']:,} habitantes")
-                            
-                            # Calcular o crescimento médio
-                            avg_growth = path_cities['growth_from_2000_to_2013'].str.rstrip('%').astype(float).mean()
-                            st.metric("Crescimento populacional médio", 
-                                      f"{avg_growth:.1f}%")
-                        
-                        # Distribuição de população nas cidades do caminho
-                        st.subheader("Distribuição populacional das cidades no caminho")
-                        
-                        fig, ax = plt.subplots(figsize=(10, 6))
-                        cities_sorted = path_cities.sort_values(by='population', ascending=False)
-                        
-                        ax.bar(cities_sorted['city'], cities_sorted['population'], color='purple')
-                        ax.set_xlabel("Cidade")
-                        ax.set_ylabel("População")
-                        ax.tick_params(axis='x', rotation=45)
-                        ax.grid(axis='y', alpha=0.3)
-                        
-                        plt.tight_layout()
-                        st.pyplot(fig)
-                        
-                        # Distribuição por estado
-                        st.subheader("Distribuição de cidades por estado")
-                        state_counts = path_cities['state'].value_counts()
-                        
-                        fig, ax = plt.subplots(figsize=(10, 6))
-                        ax.pie(state_counts, labels=state_counts.index, autopct='%1.1f%%', 
-                              startangle=90, shadow=True)
-                        ax.axis('equal')
-                        plt.tight_layout()
-                        st.pyplot(fig)
-                else:
-                    st.warning("Nenhum caminho válido encontrado para análise estatística.")
-            
-            # Adicionar a entrada do histórico para o último resultado
-            st.divider()
-            st.header("Histórico de Buscas")
-            
-            # Exibir histórico de buscas em formato de cards
-            if st.session_state.search_history:
-                # Mostrar apenas as últimas 10 buscas (incluindo a atual)
-                history = st.session_state.search_history[-10:]
-                history.reverse()  # Mais recentes primeiro
-                
-                for i, search in enumerate(history):
-                    if i > 0:  # Pular o resultado atual que já está sendo exibido em detalhes
-                        with st.expander(f"Busca {len(history)-i}: {search['start_city']} → {search['end_city']} ({search['timestamp']})"):
-                            st.write(f"**Parâmetros**: {search['params']}")
-                            
-                            # Mostrar resultados resumidos para cada algoritmo
-                            for alg_name, alg_results in search['algorithms'].items():
-                                if alg_results:
-                                    st.write(f"**{alg_name}**: {alg_results['distance_km']:.0f} km, {alg_results['cities_count']} cidades")
-                                    if 'certainty' in alg_results:
-                                        st.write(f"Certeza: {alg_results['certainty']:.2f}")
-                                else:
-                                    st.write(f"**{alg_name}**: Nenhum caminho encontrado")
-            else:
-                st.info("Nenhuma busca anterior registrada.")
+            st.error(traceback.format_exc())
+            progress_bar.progress(100)
