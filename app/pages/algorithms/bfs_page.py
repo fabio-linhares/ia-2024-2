@@ -1,64 +1,51 @@
 import streamlit as st
-import os
 import networkx as nx
 import time
-from app.utils.algorithms import IterativeBFS
-from app.components.map_display import display_path_on_map
-from app.components.progress_bar import animated_progress
+import heapq
 
 def app():
-    st.title("Algoritmo de Busca em Largura (BFS)")
+    st.title("Algoritmo de Busca em Largura (BFS) — Estado da Arte")
     
     st.markdown(r"""
     ## 1. O que é o algoritmo BFS?
+
+    A Busca em Largura (Breadth-First Search — BFS) é um algoritmo fundamental para exploração e busca em grafos. Em cada nível, o BFS visita todos os nós a uma distância k da origem antes de avançar para a distância k+1. A implementação moderna apresentada aqui adota características de estado da arte:
     
-    A Busca em Largura (Breadth-First Search) é um algoritmo fundamental de busca em grafos que explora todos os vértices
-    de um grafo a uma distância k do ponto de origem antes de explorar os vértices a uma distância k+1. Foi desenvolvido
-    em 1959 por Edward F. Moore para encontrar o caminho mais curto em labirintos.
-    
-    O BFS implementa uma estratégia de busca "nível por nível", garantindo que todos os nós em uma certa distância
-    do início sejam visitados antes de avançar para os nós mais distantes. Esta abordagem sistemática é conseguida
-    utilizando uma estrutura de dados FIFO (First-In-First-Out), tipicamente uma fila.
-    
-    Do ponto de vista matemático, o BFS realiza uma travessia por níveis na árvore de busca implícita gerada a partir
-    do grafo original, onde cada nível i contém todos os nós que estão a i arestas de distância do nó inicial.
-                
-    ### Características principais
-    
-    - **Completude**: Sempre encontra uma solução se ela existir, desde que o grafo seja finito.
-    - **Ótimo para custos unitários**: Garante encontrar o caminho com menor número de arestas.
-    - **Eficiência sistemática**: Visita os nós em ordem crescente de distância do início.
-    - **Ausência de ciclos**: Com controle de nós visitados, nunca revisita nós.
-    - **Complexidade espacial**: O(b^d), onde b é o fator de ramificação e d é a profundidade da solução.
-    - **Complexidade temporal**: O(b^d), mesma ordem da complexidade espacial.
-    - **Fronteira progressiva**: Mantém uma "fronteira" de expansão que cresce uniformemente.
+    - **Busca Bidirecional:** A busca ocorre simultaneamente a partir do ponto inicial e do final, acelerando a descoberta de caminhos mínimos.
+    - **Fila de Prioridade por População:** Entre os vizinhos não visitados, o algoritmo sempre prioriza a expansão dos nós com menor população. Caminhos de cidades menos populosas tendem a ser explorados primeiro, mas cidades de maior população não são bloqueadas — a busca é apenas priorizada.
+    - **Timeout Customizável:** Permite limitar a duração da busca, garantindo responsividade em sistemas online.
+    - **Retorno Rico de Métricas:** Inclui quantidade de cidades visitadas, tamanho máximo da fronteira, percentual do grafo explorado e detecção de timeout.
+    - **Robustez:** Sempre retorna o caminho encontrado como uma lista (vazia se não encontrar), tolerando qualquer cenário de grafo.
     """)
-    
+
+
     # Layout para pseudocódigo e imagem (lado a lado)
     cols = st.columns([1, 1])
     
     with cols[0]:
-        st.markdown("### Pseudocódigo")
-        st.code("""
-BFS(grafo, inicio, fim):
-    fila ← [inicio]
-    visitados ← {inicio}
-    pai ← dicionário vazio
-    
-    enquanto fila não estiver vazia:
-        no_atual ← remover primeiro elemento da fila
-        
-        se no_atual == fim:
-            return reconstruir_caminho(pai, inicio, fim)
-        
-        para cada vizinho de no_atual no grafo:
-            se vizinho não estiver em visitados:
-                adicionar vizinho aos visitados
-                adicionar vizinho ao final da fila
-                pai[vizinho] ← no_atual
+     # Pseudocódigo atualizado (incluindo bidirecional e fila de prioridade)
+        st.markdown("""
+        ### Pseudocódigo (moderno e priorizado)
+        ```python
+        BFS_bidirecional_prioritario(grafo, inicio, fim):
+            fronteira_inicio, fronteira_fim = filas de prioridade por população
+            visitados_inicio, visitados_fim = conjuntos de visitados
+            pais_inicio, pais_fim = dicionários de predecessores
+
+            enquanto fronteiras não vazias:
+                escolha o lado com menor fronteira p/ expandir
+                nó_atual = remover nó de menor população da fronteira
                 
-    return "Caminho não encontrado"
-        """, language="python")
+                para vizinho de nó_atual não visitado:
+                    se vizinho já explorado pelo outro lado:
+                        caminho = juntar caminho dos pais dos dois lados
+                        retorna caminho, métricas
+                    adiciona vizinho na fronteira por prioridade de população
+                    marca vizinho como visitado
+
+            retorna lista vazia, indicando nenhuma rota encontrada
+        ```
+        """)
 
     with cols[1]:
         st.markdown("##### ")
@@ -77,284 +64,202 @@ BFS(grafo, inicio, fim):
             caption="Visualização do algoritmo BFS",
             width=image_width  # Controle direto da largura
         )
+
+
+
     
-    # Detalhes matemáticos sobre BFS
+
     st.markdown(r"""
-    ### 1.1 Propriedades matemáticas do BFS
-    
-    1. **Invariante de distância**: Em qualquer momento durante a execução do BFS, quando um nó v é descoberto, 
+    --- 
+
+    ## 2. Novidades e avanços da implementação
+
+    - **Busca Bidirecional:** Reduz a complexidade esperada de O(b^d) para O(b^{d/2}) em média, onde d é a distância ótima.
+    - **Prioridade dinâmica:** Caminhos por cidades menos populosas são priorizados, útil para determinadas políticas ou preferências urbanas (exemplo: evitar grandes centros).
+    - **Fila de prioridade (`heapq`):** Eficiência garantida na retirada do próximo nó mais promissor, sem exclusão total de outras alternativas.
+    - **Timeout:** Determina fim da busca caso o tempo/recursos cheguem ao limite.
+
+    Exemplo de principais métricas:
+    - **visited:** Quantidade total de cidades exploradas;
+    - **frontier_max:** Maior largura da fronteira durante a busca;
+    - **explored_pct:** Percentual do grafo percorrido;
+    - **iterations:** Número total de iterações;
+    - **timeout:** Indicação se a busca foi abortada por tempo.
+
+    Exemplo de tuple de retorno:
+    ```python
+    caminho, distancia_total, tempo_ms, info = bfs_bidirecional_prioritario(...)
+    ```
+
+    ---
+
+    ## 3. Detalhes matemáticos e propriedades
+
+    - **Invariante de distância**: Em qualquer momento durante a execução do BFS, quando um nó v é descoberto, 
     o caminho encontrado até ele é garantidamente o mais curto em número de arestas. Formalmente:
     
     $$d(s, v) = \delta(s, v)$$
     
     Onde d(s, v) é a distância calculada pelo BFS e δ(s, v) é a distância real mais curta entre s e v.
     
-    2. **Propriedade de corte por nível**: Um grafo G=(V,E) pode ser particionado em níveis L₀, L₁, ..., Lᵢ, ... onde:
+    - **Propriedade de corte por nível**: Um grafo G=(V,E) pode ser particionado em níveis L₀, L₁, ..., Lᵢ, ... onde:
     
     $$L_0 = \{s\}$$
     $$L_i = \{v \in V : \delta(s, v) = i\}$$
     
-    3. **Árvore BFS**: A execução do BFS induz uma árvore com raiz no nó inicial s, onde para cada nó v alcançável a partir de s,
+    - **Árvore BFS**: A execução do BFS induz uma árvore com raiz no nó inicial s, onde para cada nó v alcançável a partir de s,
     existe um único caminho simples de s a v na árvore, e este caminho corresponde ao caminho mais curto em G.
     
-    4. **Teorema de correção do BFS**: Para todo nó v alcançável a partir de s, ao término do algoritmo BFS:
+    - **Teorema de correção do BFS**: Para todo nó v alcançável a partir de s, ao término do algoritmo BFS:
     
     $$d[v] = \delta(s, v)$$
     
     Onde d[v] é a distância calculada pelo algoritmo e δ(s, v) é a distância real mais curta.
+
+    ---
+
+    ## 4. Vantagens e desvantagens da nova abordagem
+
+    **Vantagens:**
+    - Exploração eficiente que preserva caminhos comuns do BFS;
+    - Priorização reduz congestionamento em regiões densamente povoadas, sem isolamento artificial;
+    - Tolerância a grafos reais (com hubs populosos);
+    - Timeout e métricas facilitam uso em sistemas críticos/online.
+
+    **Desvantagens:**
+    - Não garante sempre o caminho mais "populacionalmente baixo" — pode preferir por população, mas caminho ótimo é sempre por menor número de arestas (exceto se populações iguais).
+
+    ---
+
+    ## 5. Equivalência com Dijkstra no caso unitário
+
+    Caso todas as populações sejam iguais, a BFS priorizada equivale à BFS comum: a fila de prioridade funciona como FIFO.
     """)
-    
-    # Implementações avançadas e variantes
+
+    st.markdown("""
+## 6. Comparação com outros algoritmos
+
+| Critério                         | BFS Prioridade População  | DFS                        | Dijkstra                  | A*                        | Fuzzy                    |
+|-----------------------------------|--------------------------|----------------------------|---------------------------|---------------------------|--------------------------|
+| **Princípio básico**              | Largura priorizada (população) | Exploração em profundidade | Menor caminho (peso/dist) | Heurística + custo real   | Graus de pertinência      |
+| **Otimização**                    | Nº de paradas, prioriza cidades menos populosas | Nenhuma garantia           | Minimiza distância total  | Distância + heurística    | Multiobjetivo/incertezas |
+| **Completude**                    | Sim (em espaço finito)   | Sim (controle de ciclos)   | Sim                       | Sim                       | Depende da implementação  |
+| **Otimalidade**                   | Sim (arestas); menor população priorizada, mas não garantida | Não   | Sim (distância)          | Sim (heurística admissível)| Não (subjetiva)          |
+| **Estratégia de busca**           | Heap por população (largura priorizada) | Profundidade prioritária   | Menor custo acumulado     | Custo + heurística        | Pertinência              |
+| **Estrutura de dados**            | Fila de prioridade (heap) | Pilha (LIFO)               | Fila de prioridade        | Fila de prioridade        | Fila fuzzy               |
+| **Complexidade temporal**         | O(b^d) *(O(b^{d/2}) bidirecional)*<br>Overhead do heap possível | O(b^d) | O(E + V log V)           | O(b^d) *(varia)*          | O(b^d) + overhead fuzzy  |
+| **Complexidade espacial**         | O(b^d)                   | O(d)                       | O(V)                      | O(b^d)                    | O(b^d)                   |
+| **Uso de memória**                | Alto (heap e bidirecional) | Baixo                    | Médio                     | Médio-alto                | Alto                     |
+| **Aplicação ideal**               | Rotas curtas privilegiando cidades menos populosas; análise urbana | Exploração com pouca memória | Minimização de distância | Rotas c/ boa heurística  | Ambientes incertos       |
+| **Adequação para grafos grandes** | Média (heap/bidirecional otimizam, mas consumo alto) | Boa | Boa                      | Boa                       | Limitada                 |
+| **Paralelizável**                 | Sim (expansão de fronteira) | Difícil                  | Difícil                   | Parcialmente              | Parcialmente             |
+| **Sensibilidade à estrutura do grafo** | Média (população afeta expansão) | Alta                | Média                     | Média                     | Baixa                    |
+""")
+
+    st.markdown("""
+    ---
+    ## 7. Padrão de uso e integração
+
+    O algoritmo está adaptado para uso em sistemas web ou de backend de rotas:
+    - Cache de resultados via hash do grafo;
+    - Timeout;
+    - Safe para frontends (nunca retorna None como caminho);
+    - Fácil integração com visualizações e ferramentas de análise urbana.
+    """)
+
     st.markdown(r"""
-    ### 1.2 Implementações eficientes e variantes do BFS
-    
-    1. **BFS Bidirecional**: Inicia duas buscas simultaneamente - uma a partir do nó inicial e outra a partir do nó objetivo.
-    Quando as duas fronteiras se encontram, um caminho completo é identificado. Pode reduzir a complexidade para O(b^{d/2}).
-    
-    2. **BFS com múltiplas origens**: Inicia a busca simultaneamente a partir de múltiplos nós iniciais, útil para problemas
-    como encontrar a distância mínima de um conjunto de pontos a qualquer ponto em outro conjunto.
-    
-    3. **BFS com peso uniforme**: Equivalente ao algoritmo de Dijkstra quando todas as arestas têm o mesmo peso.
-    
-    4. **BFS com corte (Truncated BFS)**: Limita a busca a uma profundidade máxima d, útil para encontrar todos os nós
-    dentro de uma certa distância da origem.
-    
-    5. **BFS iterativo com aprofundamento (Iterative Deepening BFS)**: Realiza múltiplas buscas BFS com profundidade
-    crescente, combinando as vantagens de espaço do DFS com a otimalidade do BFS.
-    
-    6. **BFS paralelo**: Implementações distribuídas que exploram múltiplos nós da fronteira em paralelo,
-    particularmente eficazes em grafos muito grandes.
-    
-    7. **BFS com prioridade (BFSP)**: Atribui pesos às arestas e usa uma fila de prioridade, transformando-se
-    efetivamente no algoritmo de Dijkstra.
-    """)
-      
-    # Aplicações e casos de uso
-    st.markdown("""
-    ## 2. Aplicações do BFS
-    
-    1. **Análise de redes sociais**:
-       - Identificação de graus de separação entre pessoas (problema dos "seis graus de separação")
-       - Descoberta de comunidades e análise de influência
-       - Propagação de informação e modelagem de difusão viral
-    
-    2. **Descoberta e exploração em grafos**:
-       - Teste de conectividade e identificação de componentes conectados
-       - Verificação de bipartição de grafos
-       - Detecção de ciclos em grafos não direcionados
-    
-    3. **Sistemas de navegação e roteamento**:
-       - Cálculo de rotas com menor número de transferências em transporte público
-       - Planejamento de viagens minimizando número de conexões aéreas
-       - Roteamento com prioridade para conexões diretas entre cidades
-    
-    4. **Algoritmos de web crawling**:
-       - Indexação de páginas web por mecanismos de busca
-       - Descoberta de novos recursos em uma rede
-       - Mapeamento da estrutura da web
-    
-    5. **Processamento de imagens e visão computacional**:
-       - Segmentação de imagens por inundação (flood fill)
-       - Extração de regiões conectadas em imagens binárias
-       - Algoritmos de rotulação de componentes conectados
-    
-    6. **Resolução de puzzles e jogos**:
-       - Solução de quebra-cabeças como o cubo de Rubik (encontrando a sequência mais curta de movimentos)
-       - Solução de jogos como "palavra-ladder" (transformar uma palavra em outra alterando uma letra de cada vez)
-       - Geração de labirintos perfeitos (sem ciclos)
-    """)
-    
-    # Vantagens e desvantagens
-    st.markdown("""
-    ## 3. Vantagens e desvantagens no contexto de roteamento de cidades
-    
-    ### Vantagens
-    
-    - **Garantia de caminho ótimo em termos de etapas**: Encontra sempre o caminho com menor número de cidades intermediárias
-    - **Simplicidade conceitual e implementação**: Fácil de entender, programar e depurar
-    - **Previsibilidade**: Comportamento sistemático e bem definido, adequado para sistemas críticos
-    - **Adequação para grafos esparsos**: Desempenho eficiente quando o número de conexões por cidade é limitado
-    - **Consumo de memória previsível**: O uso de memória é proporcional ao número de nós na fronteira
-    - **Útil para análise topológica**: Permite descobrir propriedades estruturais da rede de cidades
-    
-    ### Desvantagens
-    
-    - **Ignora distâncias reais**: Não considera os custos variáveis das conexões entre cidades
-    - **Pode resultar em rotas ineficientes**: Caminhos com menos cidades podem ter distâncias totais muito maiores
-    - **Consumo de memória significativo**: Necessário armazenar todos os nós da fronteira, que pode crescer exponencialmente
-    - **Ineficiência para grafos densos**: Performance degrada significativamente em redes com muitas conexões por cidade
-    - **Limitações para routing multicriterial**: Não balanceia naturalmente diferentes objetivos de otimização
-    - **Inadequado para grafos ponderados**: Não apropriado quando as conexões têm custos diferentes e significativos
-    """)
-    
-    # Comparação com outros algoritmos
-    st.markdown("""
-    ## 4. Comparação com outros algoritmos
-    
-    | Critério | BFS | DFS | Dijkstra | A* | Fuzzy |
-    |----------|-----|-----|----------|----|----|
-    | **Princípio básico** | Exploração em largura | Exploração em profundidade | Menor caminho | Heurística + custo real | Graus de pertinência |
-    | **Otimização** | Número de paradas | Nenhuma garantia | Distância total | Distância com heurística | Multiobjetivo com incertezas |
-    | **Completude** | Sim (espaço finito) | Sim (com controle de ciclos) | Sim | Sim | Depende da implementação |
-    | **Otimalidade** | Sim (em arestas) | Não | Sim (distância) | Sim (com heurística admissível) | Não (subjetiva) |
-    | **Estratégia de busca** | Uniforme por níveis | Profundidade prioritária | Menor custo acumulado | Custo + heurística | Pertinência |
-    | **Estrutura de dados** | Fila (FIFO) | Pilha (LIFO) | Fila de prioridade | Fila de prioridade | Fila de prioridade fuzzy |
-    | **Complexidade temporal** | O(b^d) | O(b^d) | O(E + V log V) | O(b^d) - varia com heurística | O(b^d) com overhead fuzzy |
-    | **Complexidade espacial** | O(b^d) | O(d) | O(V) | O(b^d) | O(b^d) |
-    | **Uso de memória** | Alto | Baixo | Médio | Médio-alto | Alto |
-    | **Aplicação ideal** | Conexões uniformes | Exploração com memória limitada | Minimização de distância | Rotas com boa heurística | Ambientes incertos |
-    | **Adequação para grafos grandes** | Limitada | Boa | Boa | Média | Limitada |
-    | **Paralelizável** | Facilmente | Dificilmente | Dificilmente | Parcialmente | Parcialmente |
-    | **Sensibilidade à estrutura do grafo** | Baixa | Alta | Média | Média | Baixa |
+    ---
+    ## 8. Código simplificado da implementação bidirecional priorizada
+
+    ```python
+    import heapq, time
+
+    def breadth_first_search(graph, start, end, timeout_ms=5000):
+        start_time = time.perf_counter()
+        if start == end:
+            return [start], 0, 0, {}
+        if start not in graph or end not in graph:
+            return [], float('inf'), 0, {}
+        # prioridade: heap por população
+        frontier_start = []
+        frontier_end = []
+        heapq.heappush(frontier_start, (int(graph.nodes[start]['population']), 0, start))
+        heapq.heappush(frontier_end, (int(graph.nodes[end]['population']), 0, end))
+        visited_start = {start}
+        visited_end = {end}
+        parents_start = {start: None}
+        parents_end = {end: None}
+        counter = 1
+        nodes_visited = set([start, end])
+        max_nodes = graph.number_of_nodes()
+        frontier_max = 2
+        iteration = 0
+        while frontier_start and frontier_end:
+            if (time.perf_counter() - start_time) * 1000 > timeout_ms:
+                return [], float('inf'), (time.perf_counter() - start_time)*1000, {
+                    'visited': len(nodes_visited),
+                    'frontier_max': frontier_max,
+                    'explored_pct': (len(nodes_visited) / max_nodes) * 100,
+                    'timeout': True
+                }
+            # Expande o menor heap
+            if len(frontier_start) <= len(frontier_end):
+                frontier, visited, parents = frontier_start, visited_start, parents_start
+                other_visited, other_parents = visited_end, parents_end
+            else:
+                frontier, visited, parents = frontier_end, visited_end, parents_end
+                other_visited, other_parents = visited_start, parents_start
+            _, _, current = heapq.heappop(frontier)
+            for neighbor in graph.neighbors(current):
+                if neighbor in visited:
+                    continue
+                visited.add(neighbor)
+                parents[neighbor] = current
+                nodes_visited.add(neighbor)
+                if neighbor in other_visited:
+                    # Reconstruir caminho e retornar
+                    path = reconstruct_path(
+                        neighbor,
+                        parents_start, parents_end
+                    )
+                    total_dist = path_distance(graph, path)
+                    elapsed_time = (time.perf_counter() - start_time) * 1000
+                    info = {
+                        'visited': len(nodes_visited),
+                        'frontier_max': max(frontier_max, len(frontier_start), len(frontier_end)),
+                        'explored_pct': (len(nodes_visited) / max_nodes) * 100,
+                        'iterations': iteration,
+                        'timeout': False
+                    }
+                    return path, total_dist, elapsed_time, info
+                heapq.heappush(
+                    frontier,
+                    (int(graph.nodes[neighbor]['population']), counter, neighbor)
+                )
+                counter += 1
+            frontier_max = max(frontier_max, len(frontier_start), len(frontier_end))
+            iteration += 1
+        elapsed_time = (time.perf_counter() - start_time) * 1000
+        info = {
+            'visited': len(nodes_visited),
+            'frontier_max': frontier_max,
+            'explored_pct': (len(nodes_visited) / max_nodes) * 100,
+            'iterations': iteration,
+            'timeout': False
+        }
+        return [], float('inf'), elapsed_time, info
+    ```
     """)
 
-    # Implementação avançada do BFS - conteúdo técnico adicional
-    st.markdown(r"""
-    ## 5. Análise avançada de desempenho e otimizações
-
-    ### 5.1 Análise assintótica detalhada
-    
-    Para um grafo G = (V, E) com |V| = n vértices e |E| = m arestas:
-    
-    - **Inicialização**: O(n) para inicializar as estruturas de dados
-    - **Processamento da fila**: Cada nó entra e sai da fila exatamente uma vez, resultando em O(n) operações
-    - **Exame de arestas**: Cada aresta (u,v) é examinada quando u é desenfileirado, resultando em O(m) operações
-    
-    Portanto, a complexidade total é O(n + m), que é linear no tamanho do grafo.
-    
-    No caso específico de grafos onde m >> n (grafos densos), a complexidade é aproximadamente O(m).
-    No caso de grafos esparsos típicos em redes urbanas, onde m ≈ k·n para uma constante k pequena, a complexidade é O(n).
-    
-    ### 5.2 Otimizações de implementação
-    
-    1. **Utilização de visitados como conjunto de hash**: Permite verificação de pertinência em O(1), acelerando significativamente o algoritmo.
-    
-    2. **BFS com lista de adjacência compacta**: Em vez de armazenar explicitamente cada vizinho, usar representações compactas como listas de adjacência reduz o overhead de memória.
-    
-    3. **Pré-alocação de estruturas de dados**: Alocar memória para a fila e o conjunto de visitados antecipadamente pode reduzir o overhead de realocação.
-    
-    4. **Bit parallelism**: Para grafos pequenos, usar vetores de bits para representar o conjunto de visitados pode melhorar a eficiência de cache.
-    
-    5. **Balanceamento de carga em implementações paralelas**: Estratégias de divisão de trabalho adaptativas podem melhorar significativamente o desempenho em sistemas multicore.
-    """)
-
-    # Seção de visualização interativa (mantida do código original)
     st.markdown("""
-    ## 6. Visualização Interativa do BFS
-    
-    Nesta seção, você pode visualizar o algoritmo BFS em ação, passo a passo. Selecione as cidades de origem e destino,
-    e clique em "Iniciar Busca". Em seguida, use o botão "Continuar a iterar?" para avançar nas iterações do algoritmo
-    e observar como ele explora o grafo em busca do caminho.
+    ---
+    ## 8. Referências e links úteis
+    - [Wikipedia: Breadth-first search](https://en.wikipedia.org/wiki/Breadth-first_search)
+
+    - [Direction-Optimizing Breadth-First Search (Scott Beamer, ACM SC12)](https://scottbeamer.net/pubs/beamer-sc2012.pdf)
+    - [Wiki: Breadth-first search](https://en.wikipedia.org/wiki/Breadth-first_search)
+    - [Efficient Parallel BFS for Large Graphs](https://dl.acm.org/doi/10.1145/2735496.2735507)
     """)
-    
-    # Criando uma sessão state para armazenar o estado do algoritmo entre as iterações
-    if 'algorithm_instance' not in st.session_state:
-        st.session_state.algorithm_instance = None
-    if 'iteration_number' not in st.session_state:
-        st.session_state.iteration_number = 0
-    if 'path_found' not in st.session_state:
-        st.session_state.path_found = False
-    if 'started' not in st.session_state:
-        st.session_state.started = False
-    
-    # Carregando o grafo e as cidades (assumindo que estão disponíveis no estado da sessão)
-    if 'graph' in st.session_state and 'cities' in st.session_state:
-        graph = st.session_state.graph
-        cities = st.session_state.cities
-        
-        # Interface para seleção de cidades
-        col1, col2 = st.columns(2)
-        with col1:
-            start_city = st.selectbox(
-                "Cidade de origem", 
-                options=list(cities.keys()),
-                key="bfs_start_city"
-            )
-        with col2:
-            end_city = st.selectbox(
-                "Cidade de destino", 
-                options=list(cities.keys()),
-                key="bfs_end_city"
-            )
-        
-        # Botão para iniciar a busca
-        if st.button("Iniciar Busca", key="start_bfs"):
-            # Resetar o estado
-            st.session_state.algorithm_instance = IterativeBFS(graph, start_city, end_city)
-            st.session_state.iteration_number = 0
-            st.session_state.path_found = False
-            st.session_state.started = True
-            st.experimental_rerun()
-        
-        # Botão para continuar a iterar (avançar uma iteração)
-        if st.session_state.started:
-            # Exibir informações da iteração atual
-            st.markdown(f"### Iteração: {st.session_state.iteration_number}")
-            
-            # Informações sobre o estado atual
-            if st.session_state.algorithm_instance:
-                algo = st.session_state.algorithm_instance
-                iteration_data = algo.get_iteration_data()
-                
-                # Exibir nós visitados e fronteira
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write(f"Nós visitados: {len(iteration_data['visited_nodes'])}")
-                    st.write(f"Nós na fronteira: {len(iteration_data['frontier_nodes'])}")
-                with col2:
-                    if iteration_data['current_path']:
-                        st.write(f"Caminho atual: {' -> '.join(iteration_data['current_path'])}")
-                        st.write(f"Distância atual: {iteration_data['current_dist']:.2f} km")
-                
-                # Exibir mapa com o caminho atual e nós visitados
-                graph_for_display = graph.copy()
-                
-                # Exibir o caminho atual no mapa
-                if iteration_data['current_path']:
-                    display_path_on_map(graph_for_display, cities, iteration_data['current_path'], 
-                                       highlight_nodes=iteration_data['visited_nodes'],
-                                       frontier_nodes=iteration_data['frontier_nodes'])
-                
-                # Botão para continuar a iteração
-                if not st.session_state.path_found:
-                    if st.button("Continuar a iterar?", key="continue_iteration"):
-                        # Executar mais uma iteração
-                        is_complete = algo.step()
-                        st.session_state.iteration_number += 1
-                        
-                        if is_complete:
-                            st.session_state.path_found = True
-                            st.success(f"Caminho encontrado após {st.session_state.iteration_number} iterações!")
-                            # Animação para mostrar a conclusão
-                            # Ignorando o valor de retorno da função, pois não é necessário
-                            animated_progress()
-                            
-                        st.experimental_rerun()
-                else:
-                    st.success(f"Caminho encontrado: {' -> '.join(algo.get_current_path())}")
-                    st.info(f"Distância total: {algo.get_current_dist():.2f} km")
-                    st.info(f"Tempo de execução: {algo.elapsed_time:.2f} ms")
-                    st.info(f"Número de iterações: {st.session_state.iteration_number}")
-                    
-                    # Botão para reiniciar
-                    if st.button("Reiniciar Busca", key="restart_bfs"):
-                        st.session_state.started = False
-                        st.experimental_rerun()
-    else:
-        st.warning("Por favor, selecione um conjunto de dados na página principal primeiro.")
-    
-    # # Carregar conteúdo adicional do arquivo markdown se existir
-    # report_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 
-    #                           "reports", "bfs_report.md")
-    
-    # if os.path.exists(report_path):
-    #     with open(report_path, 'r', encoding='utf-8') as f:
-    #         report_content = f.read()
-            
-    #     st.markdown("## 6. Relatório detalhado sobre BFS")
-    #     st.markdown(report_content)
-    # else:
-    #     st.warning("Relatório detalhado sobre BFS não encontrado.")
 
     st.markdown(r"""
     ### Notas
