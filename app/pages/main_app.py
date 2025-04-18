@@ -28,7 +28,6 @@ def app():
     hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
     .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
         font-size:16px;
     }
@@ -48,6 +47,21 @@ def app():
         font-size: 2.5rem !important;
         color: var(--primary-color) !important;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    }
+    /* Ocultar seletor de tema na barra superior */
+    div[data-testid="stToolbar"] button[aria-label="View theme"] {
+        display: none !important;
+    }
+    /* Remover qualquer barra de cores no topo */
+    header::before, 
+    body::before,
+    .main::before,
+    #root::before,
+    [data-testid="stAppViewContainer"]::before,
+    [data-testid="stHeader"]::before {
+        content: none !important;
+        background: none !important;
+        display: none !important;
     }
     </style>
     """

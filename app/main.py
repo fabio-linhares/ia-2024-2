@@ -1,6 +1,6 @@
 import streamlit as st
 
-# Configuração da página - DEVE ser o primeiro comando Streamlit
+# Forçar o tema escuro, independente das configurações do sistema
 st.set_page_config(
     page_title="City Router - UFAL",
     page_icon=":cityscape:",
@@ -10,6 +10,50 @@ st.set_page_config(
         'About': "City Router - Projeto de Avaliação B1 da Disciplina de nteligência Artificial - PPGI-UFAL"
     }
 )
+
+# Forçar tema escuro via CSS
+force_dark_theme = """
+<style>
+:root {color-scheme: dark;}
+html, body, [class*="css"] {
+    color: white !important;
+    background-color: #0e1117 !important;
+}
+
+/* Forçar classe 'dark' no corpo do documento */
+body {
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Garantir que elementos dentro de iframes também tenham tema escuro */
+iframe {
+    color-scheme: dark;
+}
+
+/* Fundo uniforme sem gradiente */
+.stApp {
+    background: #171C28 !important;
+}
+
+/* Remover qualquer barra de gradiente no topo da página */
+header {
+    background: none !important;
+}
+
+/* Garantir que não haja elementos visuais indesejados no topo */
+.main > div:first-child {
+    background: none !important;
+}
+
+/* Remover elementos decorativos potencialmente sobrepostos */
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+</style>
+"""
+st.markdown(force_dark_theme, unsafe_allow_html=True)
 
 import os
 import base64
@@ -27,9 +71,8 @@ from app.pages.algorithms import (
     astar_page, bfs_page, dfs_page, dijkstra_page, fuzzy_page
 )
 
-# Inicialização do estado da sessão para o tema (se não existir)
-if 'theme' not in st.session_state:
-    st.session_state.theme = "dark"  # Tema padrão é escuro
+# Inicialização do estado da sessão para o tema (sempre escuro)
+st.session_state.theme = "dark"
 
 # Funções para verificar e carregar o arquivo de cidades
 def check_cities_file():
@@ -125,49 +168,12 @@ def show_file_status_message(status, message):
 # Função para alternar o tema
 def toggle_theme():
     st.session_state.theme = "dark" if st.session_state.theme == "light" else "light"
-    # Não usar st.rerun() aqui, pois causará erro quando chamado dentro de um callback
+    st.rerun()  # Forçar recarregamento da página
 
-# Aplicar tema escuro via JavaScript se o tema for "dark"
-if st.session_state.theme == "dark":
-    dark_mode_js = """
-    <script>
-        const doc = window.parent.document;
-        doc.querySelector('body').classList.add('dark');
-        
-        // Código para forçar recarga da página para aplicar o tema
-        if (window.name != 'themeSwitched') {
-            window.name = 'themeSwitched';
-            window.location.reload();
-        } else {
-            window.name = '';
-        }
-    </script>
-    """
-    st.markdown(dark_mode_js, unsafe_allow_html=True)
-else:
-    # Resetar flag quando estiver no tema claro
-    light_mode_js = """
-    <script>
-        const doc = window.parent.document;
-        doc.querySelector('body').classList.remove('dark');
-        
-        // Código para forçar recarga da página para aplicar o tema
-        if (window.name != 'themeSwitched') {
-            window.name = 'themeSwitched';
-            window.location.reload();
-        } else {
-            window.name = '';
-        }
-    </script>
-    """
-    st.markdown(light_mode_js, unsafe_allow_html=True)
-
-# Ocultar o menu de navegação padrão do Streamlit e o botão de colapso da sidebar
+# Ocultar apenas o rodapé e controles desnecessários
 hide_streamlit_elements = """
 <style>
-#MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-header {visibility: hidden;}
 div[data-testid="collapsedControl"] {display: none;}
 /* Oculta o menu de páginas à esquerda */
 section[data-testid="stSidebar"] > div:first-child {
@@ -291,11 +297,6 @@ with st.sidebar:
     
     # Menu suspenso para configurações rápidas
     with st.expander("⚙️ Configurações Rápidas", expanded=st.session_state.show_config):
-        theme_icon = "moon" if st.session_state.theme == "light" else "sun"
-        theme_label = "Ativar tema escuro" if st.session_state.theme == "light" else "Ativar tema claro"
-        st.button(f"{theme_label} ::{theme_icon}::", on_click=toggle_theme)
-        
-        st.markdown("---")
         st.markdown("#### 📁 Arquivo de Dados")
         
         # Verificar o arquivo de cidades
