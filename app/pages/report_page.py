@@ -211,51 +211,89 @@ def app():
     - **Complexidade Espacial:** O(V)
     
     ### Algoritmo A* (A-Estrela)
-    
-    O A* combina as vantagens da busca gulosa e da busca de custo uniforme, utilizando uma função de avaliação f(n) = g(n) + h(n).
-    
-    **Pseudocódigo:**
-    ```
-    function AStar(graph, start, goal):
-        openSet ← {start}
+    O algoritmo **A\*** (_A-Estrela_) combina as vantagens da **busca gulosa** e da **busca de custo uniforme (Dijkstra)**, utilizando uma função de avaliação que soma o custo real já percorrido com uma **estimativa heurística** do restante do caminho até o objetivo:
+
+    $$
+    f(n) = g(n) + h(n)
+    $$
+
+    - $g(n)$: custo real acumulado do início até o nó $n$  
+    - $h(n)$: heurística (estimativa do custo restante até o destino)
+
+    ---
+
+    #### 🚀 Destaques da Implementação
+
+    - ✅ Suporte a **funções heurísticas customizadas** (ex.: Haversine, ALT/Landmark)  
+    - ⚖️ **Penalidades contextuais** no custo (ex.: criminalidade, infraestrutura, tráfego)  
+    - 🧮 **Fila de prioridade (heap)** com desempate refinado (heurística, população, grau, hash)  
+    - ⏱️ **Early exit** e **lazy updates** para máxima eficiência  
+    - 📊 **Logging e benchmarking embutidos** para análise de desempenho
+
+    ---
+
+    #### 📘 Pseudocódigo Moderno
+
+    ```python
+    function AStar(graph, start, goal, heuristic, cost, tiebreaker):
+        openSet ← priority queue (ordered by f, tiebreaker)
         closedSet ← empty set
+        g[n] ← ∞ para todos os nós n
+        f[n] ← ∞ para todos os nós n
         g[start] ← 0
-        f[start] ← h(start, goal)
-        predecessors ← empty dictionary
-        
-        while openSet is not empty:
-            current ← node in openSet with lowest f-score
-            
-            if current = goal:
-                return reconstructPath(predecessors, start, goal)
-            
-            Remove current from openSet
-            Add current to closedSet
-            
-            for each neighbor of current:
-                if neighbor in closedSet:
+        f[start] ← heuristic(start)
+        predecessors ← empty map
+        inserir start na openSet com f e tiebreaker
+
+        enquanto openSet não estiver vazia:
+            current ← nó em openSet com menor (f, tiebreaker)
+            se current == goal:
+                retornar reconstruir_caminho(predecessors, start, goal)
+            adicionar current ao closedSet
+
+            para cada neighbor de current no grafo:
+                se neighbor em closedSet:
                     continue
-                
-                tentative_g ← g[current] + dist(current, neighbor)
-                
-                if neighbor not in openSet:
-                    Add neighbor to openSet
-                elif tentative_g >= g[neighbor]:
-                    continue
-                
-                predecessors[neighbor] ← current
-                g[neighbor] ← tentative_g
-                f[neighbor] ← g[neighbor] + h(neighbor, goal)
-        
-        return "No path found"
+
+                tentative_g ← g[current] + cost(current, neighbor, edge_data)
+
+                se tentative_g < g[neighbor]:
+                    predecessors[neighbor] ← current
+                    g[neighbor] ← tentative_g
+                    f[neighbor] ← tentative_g + heuristic(neighbor)
+                    inserir/atualizar neighbor em openSet com (f, tiebreaker)
+
+        retornar "No path found"
     ```
-    
-    **Características:**
-    - **Completude:** Completo se o grafo for finito e a heurística for admissível
-    - **Otimalidade:** Ótimo se a heurística nunca superestimar o custo real
-    - **Complexidade Temporal:** O(b^d) no pior caso, onde b é o fator de ramificação e d a profundidade
-    - **Complexidade Espacial:** O(b^d) no pior caso
-    
+
+    ---
+
+    #### 🧠 Características Técnicas da Implementação
+
+    - **Completude:** Garante encontrar uma solução se o grafo for finito e a heurística for admissível  
+    - **Otimalidade:** Retorna o caminho de menor custo se a heurística nunca superestimar o custo real  
+    - **Eficiência:** Otimizado com heurísticas consistentes, desempates refinados e penalidades contextuais  
+    - **Lazy Updates:** Evita reprocessamento redundante de nós já visitados  
+    - **Logging Integrado:** Permite análise detalhada (nós expandidos, custos, profundidade, tempo)  
+    - **Modularidade Total:** Suporte a múltiplas heurísticas, funções de custo e critérios de desempate  
+
+    ---
+
+    #### ⏳ Complexidade
+
+    - **Complexidade Temporal:**  
+    $O(b^d)$ no pior caso — onde `b` é o fator de ramificação e `d` é a profundidade da solução.  
+    Na prática, é significativamente menor com boas heurísticas.
+
+    - **Complexidade Espacial:**  
+    $O(b^d)$ no pior caso — devido ao armazenamento de fronteiras e nós visitados.
+
+    ---
+
+    A implementação do A* aqui vai além do padrão acadêmico: é pensada para cenários reais, com alta performance, adaptabilidade e integração com sistemas de análise urbana ou mobilidade inteligente.
+
+
+   
     ### Algoritmo de Busca Fuzzy
     
     A Busca Fuzzy utiliza lógica difusa para lidar com incertezas nas conexões entre cidades, atribuindo graus de pertinência entre 0 e 1.
