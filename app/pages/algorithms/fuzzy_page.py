@@ -15,6 +15,11 @@ def app():
     Na busca fuzzy, uma conexão entre dois pontos não é apenas "presente" ou "ausente", mas pode
     ter qualquer valor entre 0 (totalmente ausente) e 1 (totalmente presente). Isso permite representar
     situações como "esta estrada está parcialmente congestionada" ou "esta rota é moderadamente confiável".
+    
+    A fundamentação matemática da lógica fuzzy foi proposta por Lotfi Zadeh em 1965, revolucionando a abordagem
+    para problemas com incerteza. Enquanto a teoria clássica de conjuntos determina se um elemento pertence ou não
+    a um conjunto (função característica χA(x) ∈ {0,1}), a teoria dos conjuntos fuzzy permite pertinência parcial
+    (função de pertinência μA(x) ∈ [0,1]).
                 
     ### Características principais
     
@@ -22,6 +27,8 @@ def app():
     - **Tolerância**: Pode encontrar caminhos alternativos mesmo quando conexões ideais não estão disponíveis.
     - **Adaptabilidade**: Pode ajustar-se a diferentes condições e restrições.
     - **Valor de certeza**: Fornece um índice que indica a confiabilidade do caminho encontrado.
+    - **Processamento de informação linguística**: Pode incorporar termos vagos como "perto", "longe", "rápido".
+    - **Inferência baseada em regras**: Utiliza regras do tipo "SE-ENTÃO" com variáveis linguísticas.
     """)
     
     # Layout para pseudocódigo e imagem (lado a lado)
@@ -115,73 +122,141 @@ FuzzySearch(grafo, inicio, fim, r, d):
     $$
 
     Onde $c$ é o centro e $\sigma$ controla a largura da curva.
-    """)
-
-    # Outra seção (aplicações como exemplo)
-    st.markdown(r"""
-    ### 2. Aplicações da Busca Fuzzy
-
-    1. **Sistemas de navegação avançados**:
-    - Lidar com rotas onde existem incertezas (como engarrafamentos ou condições climáticas).
-    - Priorizar caminhos com maior probabilidade de sucesso.
-    2. **Logística e transporte**:
-    - Planejamento de rotas para entregas em cidades diferentes.
-    """)
     
+    4. **Função Sigmoide**: Útil para modelar transições graduais em limiares.
+    
+    $$
+    \mu(x) = \frac{1}{1 + e^{-a(x-c)}}
+    $$
+    
+    Onde $c$ é o ponto de inflexão e $a$ controla a inclinação.
+    
+    5. **Função S-Shape (Curva S)**: Adequada para modelar conceitos como "aproximadamente maior que".
+    
+    $$
+    \mu(x) = 
+    \begin{cases}
+    0, & \text{se } x \leq a \\
+    2\left(\frac{x-a}{c-a}\right)^2, & \text{se } a \leq x \leq b \\
+    1-2\left(\frac{x-c}{c-a}\right)^2, & \text{se } b \leq x \leq c \\
+    1, & \text{se } x \geq c
+    \end{cases}
+    $$
+    
+    Onde $b = \frac{a+c}{2}$
+    """)
+
+    # Outra seção (sistemas fuzzy)
+    st.markdown(r"""
+    ### 1.2 Sistema de Inferência Fuzzy para Roteamento
+    
+    O processo de tomada de decisão em um sistema fuzzy para encontrar caminhos entre cidades geralmente segue estas etapas:
+    
+    1. **Fuzzificação**: Converter valores precisos de entrada (como distância, tráfego, condições climáticas) em graus de pertinência a conjuntos fuzzy.
+    
+    2. **Inferência**: Aplicar regras fuzzy do tipo "SE-ENTÃO" para determinar a adequação de cada conexão:
+       - SE distância é curta E tráfego é leve, ENTÃO adequação é alta
+       - SE distância é média E tráfego é moderado, ENTÃO adequação é média
+       - SE distância é longa OU tráfego é intenso, ENTÃO adequação é baixa
+    
+    3. **Agregação**: Combinar os resultados de todas as regras ativadas usando operadores de agregação (geralmente máximo).
+    
+    4. **Defuzzificação**: Converter o conjunto fuzzy resultante em um valor preciso de adequação para cada conexão.
+    
+    A complexidade computacional desse processo é compensada pela capacidade de modelar incertezas e imprecisões de forma mais realista.
+    
+    **Operadores Fuzzy Avançados**
+    
+    Além dos operadores básicos (T-norm, T-conorm), sistemas fuzzy avançados podem utilizar:
+    
+    - **Operadores de média ponderada**: $\mu_A(x) = \sum_{i=1}^{n} w_i \mu_i(x)$, onde $w_i$ são pesos.
+    - **Operadores OWA (Ordered Weighted Averaging)**: Combinam valores ordenados por magnitude.
+    - **Integrais Fuzzy**: Especialmente a integral de Sugeno e Choquet, para agregação não-aditiva.
+    """)
+
     # Aplicações e casos de uso
     st.markdown("""
     ## 2. Aplicações da Busca Fuzzy
-    
+
     1. **Sistemas de navegação avançados**:
-       - Lidar com rotas onde existem incertezas (como condições de tráfego variáveis)
-       - Encontrar caminhos alternativos quando o caminho ideal não está disponível
+       - Modelagem de congestionamentos variáveis ao longo do dia (alta imprecisão temporal)
+       - Sistemas de navegação adaptativa que aprendem com o comportamento do usuário
+       - Navegação em condições de emergência com múltiplos critérios conflitantes
     
     2. **Planejamento de rotas com múltiplos critérios**:
-       - Balancear distância, tempo, custo e outras variáveis
-       - Situações onde a conectividade entre locais pode variar (ex: transporte público com horários variáveis)
+       - Otimização multicritério fuzzy considerando distância, tempo, custo, segurança e conforto
+       - Roteamento de frotas de veículos com restrições de tempo e capacidade fuzzy
+       - Balanceamento entre rotas ecológicas e rápidas (green routing)
     
     3. **Sistemas de recomendação de rotas**:
-       - Sugerir alternativas quando o caminho direto está congestionado
-       - Considerar preferências subjetivas dos usuários
+       - Roteamento turístico considerando preferências vagas ("lugares interessantes", "não muito distante")
+       - Sistemas de recomendação baseados em perfis de condução individuais
+       - Navegação para pessoas com necessidades especiais com critérios personalizados
+       
+    4. **Aplicações industriais e logísticas**:
+       - Controle de tráfego urbano com semáforos inteligentes baseados em lógica fuzzy
+       - Planejamento de rotas para veículos autônomos em ambientes dinâmicos
+       - Otimização de cadeias de suprimentos com incertezas (demanda, disponibilidade, tempos)
+       
+    5. **Aplicações militares e de emergência**:
+       - Planejamento de rotas de evacuação considerando múltiplos riscos imprecisos
+       - Navegação de drones em ambientes hostis com informações incompletas
+       - Coordenação de equipes de resgate em desastres naturais
+    """)
     
+    # Vantagens e desvantagens
+    st.markdown("""
     ## 3. Vantagens e desvantagens no contexto de roteamento de cidades
     
     ### Vantagens
-    - Lida com incertezas e imprecisões nos dados
-    - Pode encontrar caminhos alternativos quando o caminho ideal não está disponível
-    - Fornece um valor de confiança para o caminho encontrado
+    
+    - **Modelagem robusta de incertezas**: Captura nuances e imprecisões impossíveis em modelos booleanos
+    - **Incorporação de conhecimento especialista**: Permite codificar conhecimento humano através de regras linguísticas
+    - **Degradação suave de desempenho**: Comportamento mais resiliente quando condições se deterioram
+    - **Transparência interpretativa**: As regras fuzzy são mais próximas da linguagem natural, facilitando depuração
+    - **Adaptabilidade dinâmica**: Pode ajustar-se a mudanças nas condições sem reprogramação completa
     
     ### Desvantagens
-    - Complexidade computacional mais elevada
-    - Requer definição cuidadosa das funções de pertinência
-    - Mais difícil de implementar e entender que algoritmos tradicionais
+    
+    - **Complexidade computacional elevada**: Especialmente em sistemas com muitas regras e variáveis
+    - **Aumento não-linear da complexidade**: O número de regras cresce exponencialmente com o número de variáveis
+    - **Calibração de parâmetros desafiadora**: Definir funções de pertinência adequadas requer experiência ou otimização
+    - **Falta de método formal de design**: Não existe procedimento padrão para o design ótimo de sistemas fuzzy
+    - **Possível inconsistência entre regras**: Regras definidas por especialistas podem ser contraditórias
+    - **Eficiência questionável em casos extremos**: Para situações muito bem definidas, algoritmos clássicos podem ser mais eficientes
     """)
     
     # Comparação com outros algoritmos
     st.markdown("""
     ## 4. Comparação com outros algoritmos
     
-    | Critério | Fuzzy | A* | BFS |
-    |----------|----|----|----|
-    | Otimização | Considera incertezas | Distância total | Número de paradas |
-    | Capacidade de adaptação | Alta | Baixa | Nenhuma |
-    | Índice de confiabilidade | Sim | Não | Não |
-    | Complexidade | Alta | Média | Baixa |
-    | Aplicação ideal | Ambientes incertos | Rotas mais curtas | Conexões uniformes |
+    | Critério | Fuzzy | A* | BFS | Dijkstra | DFS |
+    |----------|----|----|----|----|----|
+    | **Princípio básico** | Graus de pertinência | Heurística + custo real | Exploração em largura | Menor caminho | Exploração em profundidade |
+    | **Otimização** | Multiobjetivo com incertezas | Distância total com heurística | Número de paradas | Distância total | Nenhuma garantia |
+    | **Capacidade de adaptação** | Alta | Baixa | Nenhuma | Nenhuma | Nenhuma |
+    | **Modelagem de incertezas** | Nativa | Impossível sem modificações | Impossível | Impossível sem modificações | Impossível |
+    | **Índice de confiabilidade** | Sim | Não | Não | Não | Não |
+    | **Complexidade temporal** | O(b^d) com overhead fuzzy | O(b^d) | O(b^d) | O(E + V log V) | O(b^d) |
+    | **Complexidade espacial** | Alta | Média-alta | Alta | Média | Baixa |
+    | **Garantia de otimalidade** | Não (subjetiva) | Sim (com heurística admissível) | Sim (distância em arestas) | Sim (distância total) | Não |
+    | **Aplicação ideal** | Ambientes incertos, multiobjetivo | Rotas mais curtas com boa heurística | Conexões uniformes | Minimização precisa de distância | Exploração com memória limitada |
+    | **Utilização de memória** | Alta | Média-alta | Alta | Média | Baixa |
+    | **Paralelizável** | Parcialmente | Parcialmente | Facilmente | Dificilmente | Dificilmente |
     """) 
 
-    # Carregar conteúdo adicional do arquivo markdown se existir
-    report_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 
-                              "reports", "fuzzy_report.md")
+    # # Carregar conteúdo adicional do arquivo markdown se existir
+    # report_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 
+    #                           "reports", "fuzzy_report.md")
     
-    if os.path.exists(report_path):
-        with open(report_path, 'r', encoding='utf-8') as f:
-            report_content = f.read()
+    # if os.path.exists(report_path):
+    #     with open(report_path, 'r', encoding='utf-8') as f:
+    #         report_content = f.read()
             
-        st.markdown("## 5. Relatório detalhado sobre Busca Fuzzy")
-        st.markdown(report_content)
-    else:
-        st.warning("Relatório detalhado sobre Busca Fuzzy não encontrado.")
+    #     st.markdown("## 5. Relatório detalhado sobre Busca Fuzzy")
+    #     st.markdown(report_content)
+    # else:
+    #     st.warning("Relatório detalhado sobre Busca Fuzzy não encontrado.")
 
     st.markdown("""
     ### Notas
@@ -192,14 +267,21 @@ FuzzySearch(grafo, inicio, fim, r, d):
     variável dependendo de condições temporais.
     
     [2] Os operadores fuzzy mais comuns incluem:
-      - T-norm (AND lógico): frequentemente implementado como min(a,b)
-      - T-conorm (OR lógico): frequentemente implementado como max(a,b)
-      - Negação (NOT lógico): frequentemente implementado como 1-a
+      - T-norm (AND lógico): min(a,b), produto algébrico (a*b), produto de Hamacher, produto drástico
+      - T-conorm (OR lógico): max(a,b), soma algébrica (a+b-a*b), soma de Hamacher, soma drástica
+      - Negação (NOT lógico): complemento padrão (1-a), complemento de Sugeno, complemento de Yager
+      
+    [3] A teoria de possibilidade, estreitamente relacionada à teoria fuzzy, fornece uma estrutura teórica para modelar 
+    incertezas epistêmicas (falta de conhecimento) em contraste com incertezas aleatórias (variabilidade), sendo 
+    particularmente útil em sistemas com informações incompletas sobre conexões entre cidades.
+    
+    [4] No contexto de Controle Fuzzy aplicado à navegação autônoma, métodos como Mamdani e Takagi-Sugeno são amplamente 
+    utilizados, com o último oferecendo mais eficiência computacional à custa de menor interpretabilidade.
     """)
 
     # Novo capítulo: explicação da implementação real
     st.markdown("""
-    [3] Implementação real da função de pertinência fuzzy. Na implementação prática do algoritmo de busca fuzzy utilizada neste projeto (ver código fonte), 
+    [5] Implementação real da função de pertinência fuzzy. Na implementação prática do algoritmo de busca fuzzy utilizada neste projeto (ver código fonte), 
     a função de pertinência fuzzy empregada para avaliar a confiabilidade de cada aresta (ligação entre cidades) foi definida como:
 
 
@@ -225,8 +307,20 @@ FuzzySearch(grafo, inicio, fim, r, d):
 
     **Por que usar essa abordagem?**
     - **Vantagens:** Fácil de calibrar, computacionalmente eficiente, intuitiva para operadores e facilmente adaptável a diferentes domínios (basta ajustar os parâmetros de distância máxima e os limites do platô).
-    - **Comparação:** Diferente da clássica função triangular ou gaussiana, esta função é mais adequada para contextos onde se quer garantir a máxima confiança para conexões "curtas o suficiente” e decrescer rapidamente a confiança ao se afastar desse ideal.
+    - **Comparação:** Diferente da clássica função triangular ou gaussiana, esta função é mais adequada para contextos onde se quer garantir a máxima confiança para conexões "curtas o suficiente" e decrescer rapidamente a confiança ao se afastar desse ideal.
     
     **Resumo:**  
     A busca fuzzy aqui implementada utiliza esta função para penalizar caminhos com conexões muito longas e premiar caminhos formados idealmente por sequências de arestas seguras/curtas, entregando automaticamente um valor de certeza associado ao caminho calculado pelo algoritmo.
+    
+    [6] **Algoritmos Fuzzy Avançados**
+    
+    Além da implementação básica apresentada, existem variantes avançadas dos algoritmos fuzzy para roteamento:
+    
+    - **Algoritmos Fuzzy-genéticos**: Combinam a capacidade de modelagem de incerteza dos sistemas fuzzy com a otimização evolucionária dos algoritmos genéticos.
+    - **Sistemas Fuzzy Adaptativos**: Ajustam automaticamente as funções de pertinência e as regras com base nos dados observados.
+    - **Algoritmos Neuro-fuzzy (ANFIS)**: Combinam redes neurais e lógica fuzzy, permitindo aprendizado a partir de dados históricos de roteamento.
+    - **Busca Fuzzy Possibilística**: Diferencia incerteza (possibilidade de um evento) da imprecisão (grau de pertinência), resultando em roteamento mais robusto.
+    - **Sistemas Fuzzy tipo-2**: Utilizam funções de pertinência que são, elas próprias, fuzzy, modelando meta-incertezas (incerteza sobre a incerteza).
+    
+    Essas variantes têm mostrado resultados particularmente promissores em cenários urbanos complexos com alta variabilidade temporal e espacial nas condições de tráfego.
     """)
