@@ -7,7 +7,7 @@ def app():
     
     # Informações do projeto
     st.markdown("""
-    ## Projeto: Localizador de Rotas entre Cidades
+    ## Projeto: City Router
     
     Este aplicativo foi desenvolvido como atividade avaliativa B1 para a disciplina de Inteligência 
     Artificial do Programa de Pós-Graduação em Informática (PPGI) da Universidade Federal de Alagoas (UFAL).
@@ -20,7 +20,9 @@ def app():
     ### Algoritmos implementados
     
     - **BFS (Busca em Largura)**: Encontra o caminho com menor número de cidades intermediárias
+    - **DFS (Busca em Profundidade)**: Explora o grafo o mais profundamente possível antes de retroceder
     - **A* (A-Estrela)**: Encontra o caminho mais curto em termos de distância
+    - **Dijkstra**: Algoritmo para encontrar o caminho mais curto em grafos ponderados
     - **Busca Fuzzy**: Lida com incertezas nas conexões e pode encontrar rotas alternativas
     """)
     
