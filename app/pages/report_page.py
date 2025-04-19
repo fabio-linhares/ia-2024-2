@@ -208,7 +208,6 @@ def app():
     - **Complexidade Espacial:**  
     $O(d)$, onde `d` é a profundidade máxima do ramo mais longo na heap.
 
-
     
     ### Algoritmo de Dijkstra
     
@@ -219,17 +218,17 @@ def app():
     function Dijkstra(graph, start, destination):
         distances[start] ← 0
         distances[v] ← ∞ for all other vertices v
-        priorityQueue ← [(0, start)]  # (distance, node)
+        priorityQueue ← [(0, get_population(start), 0, start)]  # (distância, população, contador, nó)
         predecessors ← empty dictionary
-        visited ← empty set
+        visited ← dictionary
         
         while priorityQueue is not empty:
-            dist, current ← extract minimum from priorityQueue
+            dist, _, _, current ← extract minimum from priorityQueue
             
             if current in visited:
                 continue
             
-            Add current to visited
+            visited[current] ← dist
             
             if current = destination:
                 return reconstructPath(predecessors, start, destination)
@@ -240,7 +239,7 @@ def app():
                     if newDist < distances[neighbor]:
                         distances[neighbor] ← newDist
                         predecessors[neighbor] ← current
-                        Add (newDist, neighbor) to priorityQueue
+                        Add (newDist, get_population(neighbor), counter++, neighbor) to priorityQueue
         
         return "No path found"
     ```
@@ -248,6 +247,8 @@ def app():
     **Características:**
     - **Completude:** Completo para grafos com pesos não-negativos
     - **Otimalidade:** Garante o caminho de menor custo (distância)
+    - **Versão bidirecional:** Nossa implementação inicia buscas simultâneas da origem e do destino, aumentando a eficiência
+    - **Desempate por população:** Quando dois caminhos têm a mesma distância, prefere aqueles passando por cidades com menor população
     - **Complexidade Temporal:** O(E + V log V) com fila de prioridade
     - **Complexidade Espacial:** O(V)
     
@@ -333,7 +334,6 @@ def app():
 
     A implementação do A* aqui vai além do padrão acadêmico: é pensada para cenários reais, com alta performance, adaptabilidade e integração com sistemas de análise urbana ou mobilidade inteligente.
 
-
    
     ### Algoritmo de Busca Fuzzy
     
@@ -342,35 +342,86 @@ def app():
     **Pseudocódigo:**
     ```
     function FuzzySearch(graph, start, destination):
-        certainty[start] ← 1.0
-        certainty[v] ← 0.0 for all other vertices v
-        distances[start] ← 0
-        distances[v] ← ∞ for all other vertices v
-        priorityQueue ← [(-(1.0), 0, start)]  # (-(certainty), distance, node)
-        predecessors ← empty dictionary
+        # Inicializar busca bidirecional
+        certainty_start[start] ← 1.0
+        certainty_end[end] ← 1.0
         
-        while priorityQueue is not empty:
-            cert, dist, current ← extract maximum certainty from priorityQueue
+        distances_start[start] ← 0
+        distances_end[end] ← 0
+        
+        pq_start ← [(-(certainty_start[start]), h_start, -population, counter, start)]  # Busca da origem
+        pq_end ← [(-(certainty_end[end]), h_end, -population, counter, end)]            # Busca do destino
+        
+        visited_start ← empty set
+        visited_end ← empty set
+        
+        best_meeting_point ← None
+        best_path_certainty ← 0.0
+        best_path_length ← ∞
+        
+        while pq_start is not empty and pq_end is not empty:
+            # Decidir qual direção expandir (balanceando fronteiras)
+            expand_forward ← (size(visited_end) > size(visited_start))
             
-            if current = destination:
-                return reconstructPath(predecessors, start, destination), certainty[destination]
-            
-            for each neighbor of current:
-                edgeDist ← weight(current, neighbor)
-                edgeCertainty ← membershipFunction(edgeDist, maxDistance)
-                newCertainty ← min(certainty[current], edgeCertainty)
-                newDist ← distances[current] + edgeDist
+            if expand_forward:
+                # Expandir da origem
+                _, f_score, _, _, current ← extract from pq_start
                 
-                if newCertainty > certainty[neighbor] or (newCertainty = certainty[neighbor] and newDist < distances[neighbor]):
-                    certainty[neighbor] ← newCertainty
-                    distances[neighbor] ← newDist
-                    predecessors[neighbor] ← current
-                    Add (-(newCertainty), newDist, neighbor) to priorityQueue
+                if current in visited_start:
+                    continue
+                    
+                visited_start.add(current)
+                
+                # Verificar interseção com busca reversa
+                if current in visited_end:
+                    # Novo caminho completo encontrado
+                    path_certainty ← min(certainty_start[current], certainty_end[current])
+                    total_distance ← distances_start[current] + distances_end[current]
+                    
+                    if path_certainty > best_path_certainty or 
+                       (path_certainty == best_path_certainty and total_distance < best_path_length):
+                        best_meeting_point ← current
+                        best_path_certainty ← path_certainty
+                        best_path_length ← total_distance
+                
+                # Processar vizinhos
+                for each neighbor of current:
+                    # Calcular nova certeza para esta aresta
+                    edge_dist ← weight(current, neighbor)
+                    edge_certainty ← membership_function(edge_dist, max_distance)
+                    new_certainty ← min(certainty_start[current], edge_certainty)
+                    new_dist ← distances_start[current] + edge_dist
+                    
+                    if new_certainty > certainty_start[neighbor] or
+                       (new_certainty == certainty_start[neighbor] and new_dist < distances_start[neighbor]):
+                        # Atualizar caminho
+                        certainty_start[neighbor] ← new_certainty
+                        distances_start[neighbor] ← new_dist
+                        predecessors_start[neighbor] ← current
+                        
+                        # Calcular prioridade com componente heurístico
+                        h_value ← heuristic(neighbor, destination)
+                        f_score ← new_dist + h_value
+                        population ← graph.nodes[neighbor].get('population', 0)
+                        
+                        Add (-(new_certainty), f_score, -population, counter++, neighbor) to pq_start
+            else:
+                # Expandir do destino (processo similar)
+                # ...código simétrico para expandir do destino
         
-        return "No path found", 0.0
+        # Reconstruir o caminho a partir do ponto de encontro
+        if best_meeting_point is not None:
+            path ← reconstruct_bidirectional_path(best_meeting_point, predecessors_start, predecessors_end)
+            return path, best_path_length, best_path_certainty
+        
+        return "No path found", ∞, 0.0
     ```
     
     **Características:**
+    - **Abordagem bidirecional:** Busca simultânea a partir da origem e do destino, reduzindo o espaço de busca
+    - **Heurística geográfica:** Utiliza distância Haversine para guiar a busca, similar ao A*
+    - **Função de pertinência parametrizada:** Permite ajustar o comportamento fuzzy por meio de parâmetros configuráveis
+    - **Priorização por população:** Em caso de empate, prioriza cidades com menor população
     - **Completude:** Depende da parametrização e da função de pertinência
     - **Otimalidade:** Não garante otimalidade, mas encontra caminhos com boa confiabilidade
     - **Complexidade Temporal:** Similar ao A*, com overhead adicional da função fuzzy
