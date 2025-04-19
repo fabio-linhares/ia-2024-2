@@ -1,0 +1,17 @@
+
+
+--- TESTE REALIZADO EM 19/04/2025 15:56:26 ---
+Raio de conexão (r): 5.0°
+Origem: New York
+Destino: San Jose
+Grafo: 300 nós e 5281 arestas
+
+Algoritmo: BFS
+Caminho (12 cidades): New York -> Erie -> Roanoke -> Sandy Springs -> Memphis -> Broken Arrow -> Lewisville -> Odessa -> Las Cruces -> Surprise -> Jurupa Valley -> San Jose
+
+Algoritmo: Dijkstra
+Caminho (12 cidades): New York -> Pittsburgh -> Dayton -> St. Louis -> Springfield -> Broken Arrow -> Wichita Falls -> Amarillo -> Albuquerque -> Surprise -> Victorville -> San Jose
+
+Algoritmo: Astar
+Caminho (11 cidades): New York -> Erie -> South Bend -> Cedar Rapids -> Lincoln -> Wichita -> Amarillo -> Albuquerque -> Surprise -> Lancaster -> San Jose
+

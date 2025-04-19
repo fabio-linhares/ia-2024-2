@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_da847684c223cb21978ff7cbb6df447c {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_da847684c223cb21978ff7cbb6df447c" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_da847684c223cb21978ff7cbb6df447c = L.map(
+                "map_da847684c223cb21978ff7cbb6df447c",
+                {
+                    center: [39.8, -98.5],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 4,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+            L.control.scale().addTo(map_da847684c223cb21978ff7cbb6df447c);
+
+            
+
+        
+    
+            var tile_layer_92a00f15d7c3fbb1dc8bc57c1c02c55e = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_92a00f15d7c3fbb1dc8bc57c1c02c55e.addTo(map_da847684c223cb21978ff7cbb6df447c);
+        
+    
+            var marker_8af9787e60e65ce5c0e564752227fb00 = L.marker(
+                [41.8455877, -87.7539448],
+                {
+}
+            ).addTo(map_da847684c223cb21978ff7cbb6df447c);
+        
+    
+            var icon_b3ec1e2122ac3ca6747085d4b979cc68 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "play",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7661911b090d0627047f3fa7979ce85c = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_05eeb4929c8d7a84ab99a1845902fdc2 = $(`<div id="html_05eeb4929c8d7a84ab99a1845902fdc2" style="width: 100.0%; height: 100.0%;">                 <b>Cicero, Illinois</b><br>                 População: 84,103<br>                 Coordenadas: 41.8456, -87.7539                 </div>`)[0];
+                popup_7661911b090d0627047f3fa7979ce85c.setContent(html_05eeb4929c8d7a84ab99a1845902fdc2);
+            
+        
+
+        marker_8af9787e60e65ce5c0e564752227fb00.bindPopup(popup_7661911b090d0627047f3fa7979ce85c)
+        ;
+
+        
+    
+    
+            marker_8af9787e60e65ce5c0e564752227fb00.bindTooltip(
+                `<div>
+                     1. Cicero
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_8af9787e60e65ce5c0e564752227fb00.setIcon(icon_b3ec1e2122ac3ca6747085d4b979cc68);
+            
+    
+            var marker_b0502e450fb88505f15ba06152aa2abd = L.marker(
+                [41.3683798, -82.1076486],
+                {
+}
+            ).addTo(map_da847684c223cb21978ff7cbb6df447c);
+        
+    
+            var icon_4d3125610e3f96a8c6e3b9207366ffeb = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a8b391b3903b4d5dd67575160ea1077f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_b1b3edc0f5ce47bc83966de5d1bdd06e = $(`<div id="html_b1b3edc0f5ce47bc83966de5d1bdd06e" style="width: 100.0%; height: 100.0%;">                 <b>Elyria, Ohio</b><br>                 População: 53,956<br>                 Coordenadas: 41.3684, -82.1076                 </div>`)[0];
+                popup_a8b391b3903b4d5dd67575160ea1077f.setContent(html_b1b3edc0f5ce47bc83966de5d1bdd06e);
+            
+        
+
+        marker_b0502e450fb88505f15ba06152aa2abd.bindPopup(popup_a8b391b3903b4d5dd67575160ea1077f)
+        ;
+
+        
+    
+    
+            marker_b0502e450fb88505f15ba06152aa2abd.bindTooltip(
+                `<div>
+                     2. Elyria
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_b0502e450fb88505f15ba06152aa2abd.setIcon(icon_4d3125610e3f96a8c6e3b9207366ffeb);
+            
+    
+            var marker_0394f1bd885d06b702df0fefd64c5a62 = L.marker(
+                [39.0067768, -76.7791365],
+                {
+}
+            ).addTo(map_da847684c223cb21978ff7cbb6df447c);
+        
+    
+            var icon_741586d188b5c4a86e0db61f275e2198 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "flag-checkered",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d00f0394d3944af6d181250c78419b5f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_fe52da1754f5f87e25df865111ce8e0e = $(`<div id="html_fe52da1754f5f87e25df865111ce8e0e" style="width: 100.0%; height: 100.0%;">                 <b>Bowie, Maryland</b><br>                 População: 56,759<br>                 Coordenadas: 39.0068, -76.7791                 </div>`)[0];
+                popup_d00f0394d3944af6d181250c78419b5f.setContent(html_fe52da1754f5f87e25df865111ce8e0e);
+            
+        
+
+        marker_0394f1bd885d06b702df0fefd64c5a62.bindPopup(popup_d00f0394d3944af6d181250c78419b5f)
+        ;
+
+        
+    
+    
+            marker_0394f1bd885d06b702df0fefd64c5a62.bindTooltip(
+                `<div>
+                     3. Bowie
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_0394f1bd885d06b702df0fefd64c5a62.setIcon(icon_741586d188b5c4a86e0db61f275e2198);
+            
+    
+            var poly_line_7e04e7dbfde99458ebd44f8619364afa = L.polyline(
+                [[41.8455877, -87.7539448], [41.3683798, -82.1076486]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_da847684c223cb21978ff7cbb6df447c);
+        
+    
+        var popup_1986ea1f4b20af35f4c41fa9d8391676 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_f4b50f3d789f44153b8b1a5db01ab2ef = $(`<div id="html_f4b50f3d789f44153b8b1a5db01ab2ef" style="width: 100.0%; height: 100.0%;">Segmento 1: Cicero → Elyria</div>`)[0];
+                popup_1986ea1f4b20af35f4c41fa9d8391676.setContent(html_f4b50f3d789f44153b8b1a5db01ab2ef);
+            
+        
+
+        poly_line_7e04e7dbfde99458ebd44f8619364afa.bindPopup(popup_1986ea1f4b20af35f4c41fa9d8391676)
+        ;
+
+        
+    
+    
+            poly_line_7e04e7dbfde99458ebd44f8619364afa.bindTooltip(
+                `<div>
+                     De Cicero para Elyria
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_19d51585de291c8fe3e04a47921f14f7 = L.polyline(
+                [[41.3683798, -82.1076486], [39.0067768, -76.7791365]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_da847684c223cb21978ff7cbb6df447c);
+        
+    
+        var popup_e319007de4accc5c52faebf9ec9cd21f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_5878c99e3791949fa1df12f667fa76fb = $(`<div id="html_5878c99e3791949fa1df12f667fa76fb" style="width: 100.0%; height: 100.0%;">Segmento 2: Elyria → Bowie</div>`)[0];
+                popup_e319007de4accc5c52faebf9ec9cd21f.setContent(html_5878c99e3791949fa1df12f667fa76fb);
+            
+        
+
+        poly_line_19d51585de291c8fe3e04a47921f14f7.bindPopup(popup_e319007de4accc5c52faebf9ec9cd21f)
+        ;
+
+        
+    
+    
+            poly_line_19d51585de291c8fe3e04a47921f14f7.bindTooltip(
+                `<div>
+                     De Elyria para Bowie
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            tile_layer_92a00f15d7c3fbb1dc8bc57c1c02c55e.addTo(map_da847684c223cb21978ff7cbb6df447c);
+        
+    
+                marker_8af9787e60e65ce5c0e564752227fb00.setIcon(icon_b3ec1e2122ac3ca6747085d4b979cc68);
+            
+    
+                marker_b0502e450fb88505f15ba06152aa2abd.setIcon(icon_4d3125610e3f96a8c6e3b9207366ffeb);
+            
+    
+                marker_0394f1bd885d06b702df0fefd64c5a62.setIcon(icon_741586d188b5c4a86e0db61f275e2198);
+            
+</script>
+</html>

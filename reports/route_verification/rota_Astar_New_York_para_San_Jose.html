@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_cc9cab61f46504153cd2947802dbe093 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_cc9cab61f46504153cd2947802dbe093" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_cc9cab61f46504153cd2947802dbe093 = L.map(
+                "map_cc9cab61f46504153cd2947802dbe093",
+                {
+                    center: [39.8, -98.5],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 4,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+            L.control.scale().addTo(map_cc9cab61f46504153cd2947802dbe093);
+
+            
+
+        
+    
+            var tile_layer_31a71f6eb8bd3c36b56d4c4dbc3271b6 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_31a71f6eb8bd3c36b56d4c4dbc3271b6.addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var marker_0469c9eb073d47059f02bcee71cdf51f = L.marker(
+                [40.7127837, -74.0059413],
+                {
+}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var icon_b56f36f15b9c8e4b8007d941fb522e97 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "play",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c32694d9c025c4340cba247ef01dd3a9 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_e1923d30778ca5e809ed6a029e808a63 = $(`<div id="html_e1923d30778ca5e809ed6a029e808a63" style="width: 100.0%; height: 100.0%;">                 <b>New York, New York</b><br>                 População: 8,405,837<br>                 Coordenadas: 40.7128, -74.0059                 </div>`)[0];
+                popup_c32694d9c025c4340cba247ef01dd3a9.setContent(html_e1923d30778ca5e809ed6a029e808a63);
+            
+        
+
+        marker_0469c9eb073d47059f02bcee71cdf51f.bindPopup(popup_c32694d9c025c4340cba247ef01dd3a9)
+        ;
+
+        
+    
+    
+            marker_0469c9eb073d47059f02bcee71cdf51f.bindTooltip(
+                `<div>
+                     1. New York
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_0469c9eb073d47059f02bcee71cdf51f.setIcon(icon_b56f36f15b9c8e4b8007d941fb522e97);
+            
+    
+            var marker_737bd18ccd247ef47d568798454d63bd = L.marker(
+                [42.1292241, -80.085059],
+                {
+}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var icon_f5bd026bea7f90840516bc5e15c4f67c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_9d9bc172bdc1d48475e9c5f4613bb689 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_591e2a1a3db7188d207b9c2c6cd9dfbe = $(`<div id="html_591e2a1a3db7188d207b9c2c6cd9dfbe" style="width: 100.0%; height: 100.0%;">                 <b>Erie, Pennsylvania</b><br>                 População: 100,671<br>                 Coordenadas: 42.1292, -80.0851                 </div>`)[0];
+                popup_9d9bc172bdc1d48475e9c5f4613bb689.setContent(html_591e2a1a3db7188d207b9c2c6cd9dfbe);
+            
+        
+
+        marker_737bd18ccd247ef47d568798454d63bd.bindPopup(popup_9d9bc172bdc1d48475e9c5f4613bb689)
+        ;
+
+        
+    
+    
+            marker_737bd18ccd247ef47d568798454d63bd.bindTooltip(
+                `<div>
+                     2. Erie
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_737bd18ccd247ef47d568798454d63bd.setIcon(icon_f5bd026bea7f90840516bc5e15c4f67c);
+            
+    
+            var marker_b77e7ed8b83f8023cfe415e0e480f2c1 = L.marker(
+                [41.6763545, -86.2519898],
+                {
+}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var icon_6ef769851a1c4fd26d8d77fa96276996 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_13f6781c9859c1705e8a1c68ce2f0e55 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_007591c131e9cbbdae61ce45ecb08555 = $(`<div id="html_007591c131e9cbbdae61ce45ecb08555" style="width: 100.0%; height: 100.0%;">                 <b>South Bend, Indiana</b><br>                 População: 100,886<br>                 Coordenadas: 41.6764, -86.2520                 </div>`)[0];
+                popup_13f6781c9859c1705e8a1c68ce2f0e55.setContent(html_007591c131e9cbbdae61ce45ecb08555);
+            
+        
+
+        marker_b77e7ed8b83f8023cfe415e0e480f2c1.bindPopup(popup_13f6781c9859c1705e8a1c68ce2f0e55)
+        ;
+
+        
+    
+    
+            marker_b77e7ed8b83f8023cfe415e0e480f2c1.bindTooltip(
+                `<div>
+                     3. South Bend
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_b77e7ed8b83f8023cfe415e0e480f2c1.setIcon(icon_6ef769851a1c4fd26d8d77fa96276996);
+            
+    
+            var marker_e9fa9db1ab07fb508f356d29b6a272d7 = L.marker(
+                [41.9778795, -91.6656232],
+                {
+}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var icon_76f58caddf455c6c6a607e2bb294e1fc = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f179cb6eb2684a788e06a9919c88117c = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ecb8a293673b92c913945cb4a9795729 = $(`<div id="html_ecb8a293673b92c913945cb4a9795729" style="width: 100.0%; height: 100.0%;">                 <b>Cedar Rapids, Iowa</b><br>                 População: 128,429<br>                 Coordenadas: 41.9779, -91.6656                 </div>`)[0];
+                popup_f179cb6eb2684a788e06a9919c88117c.setContent(html_ecb8a293673b92c913945cb4a9795729);
+            
+        
+
+        marker_e9fa9db1ab07fb508f356d29b6a272d7.bindPopup(popup_f179cb6eb2684a788e06a9919c88117c)
+        ;
+
+        
+    
+    
+            marker_e9fa9db1ab07fb508f356d29b6a272d7.bindTooltip(
+                `<div>
+                     4. Cedar Rapids
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_e9fa9db1ab07fb508f356d29b6a272d7.setIcon(icon_76f58caddf455c6c6a607e2bb294e1fc);
+            
+    
+            var marker_c1b3a9326728cb20821bff6e4f39240a = L.marker(
+                [40.8257625, -96.6851982],
+                {
+}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var icon_97af973338a48a9aacbba6d3a1e21e91 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c4c1a8e85d20c99bc18638ed5a6b59c5 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_efefed49f223ac9e2e6717b511f7edd3 = $(`<div id="html_efefed49f223ac9e2e6717b511f7edd3" style="width: 100.0%; height: 100.0%;">                 <b>Lincoln, Nebraska</b><br>                 População: 268,738<br>                 Coordenadas: 40.8258, -96.6852                 </div>`)[0];
+                popup_c4c1a8e85d20c99bc18638ed5a6b59c5.setContent(html_efefed49f223ac9e2e6717b511f7edd3);
+            
+        
+
+        marker_c1b3a9326728cb20821bff6e4f39240a.bindPopup(popup_c4c1a8e85d20c99bc18638ed5a6b59c5)
+        ;
+
+        
+    
+    
+            marker_c1b3a9326728cb20821bff6e4f39240a.bindTooltip(
+                `<div>
+                     5. Lincoln
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_c1b3a9326728cb20821bff6e4f39240a.setIcon(icon_97af973338a48a9aacbba6d3a1e21e91);
+            
+    
+            var marker_eb1741fc30e560f8b8ea8da6af6b876f = L.marker(
+                [37.688889, -97.336111],
+                {
+}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var icon_9e39c6584ffaf497c442173767908981 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "darkred",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_1316dfbf453a60d60819e2c210977987 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_3770c739213ce1a98f4eff45061d39ce = $(`<div id="html_3770c739213ce1a98f4eff45061d39ce" style="width: 100.0%; height: 100.0%;">                 <b>Wichita, Kansas</b><br>                 População: 386,552<br>                 Coordenadas: 37.6889, -97.3361                 </div>`)[0];
+                popup_1316dfbf453a60d60819e2c210977987.setContent(html_3770c739213ce1a98f4eff45061d39ce);
+            
+        
+
+        marker_eb1741fc30e560f8b8ea8da6af6b876f.bindPopup(popup_1316dfbf453a60d60819e2c210977987)
+        ;
+
+        
+    
+    
+            marker_eb1741fc30e560f8b8ea8da6af6b876f.bindTooltip(
+                `<div>
+                     6. Wichita
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_eb1741fc30e560f8b8ea8da6af6b876f.setIcon(icon_9e39c6584ffaf497c442173767908981);
+            
+    
+            var marker_582dce45b921419e52f7c5b7d24d40cd = L.marker(
+                [35.2219971, -101.8312969],
+                {
+}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var icon_39e281de36c27f913c4c0d8f3d2f4b12 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "lightred",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6b863324198bc242438ccea602d39502 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ed3bd0328d41c37d159d59429e0ee40f = $(`<div id="html_ed3bd0328d41c37d159d59429e0ee40f" style="width: 100.0%; height: 100.0%;">                 <b>Amarillo, Texas</b><br>                 População: 196,429<br>                 Coordenadas: 35.2220, -101.8313                 </div>`)[0];
+                popup_6b863324198bc242438ccea602d39502.setContent(html_ed3bd0328d41c37d159d59429e0ee40f);
+            
+        
+
+        marker_582dce45b921419e52f7c5b7d24d40cd.bindPopup(popup_6b863324198bc242438ccea602d39502)
+        ;
+
+        
+    
+    
+            marker_582dce45b921419e52f7c5b7d24d40cd.bindTooltip(
+                `<div>
+                     7. Amarillo
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_582dce45b921419e52f7c5b7d24d40cd.setIcon(icon_39e281de36c27f913c4c0d8f3d2f4b12);
+            
+    
+            var marker_99603e7bfe21ada9a7f25b69910cd96e = L.marker(
+                [35.0853336, -106.6055534],
+                {
+}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var icon_ac021c9daaab78003bb068f806a846b5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "darkblue",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8873a34a6dec6d9743888ac8d1f5307d = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_9124d204fe4a794353ae6ce43310cbdd = $(`<div id="html_9124d204fe4a794353ae6ce43310cbdd" style="width: 100.0%; height: 100.0%;">                 <b>Albuquerque, New Mexico</b><br>                 População: 556,495<br>                 Coordenadas: 35.0853, -106.6056                 </div>`)[0];
+                popup_8873a34a6dec6d9743888ac8d1f5307d.setContent(html_9124d204fe4a794353ae6ce43310cbdd);
+            
+        
+
+        marker_99603e7bfe21ada9a7f25b69910cd96e.bindPopup(popup_8873a34a6dec6d9743888ac8d1f5307d)
+        ;
+
+        
+    
+    
+            marker_99603e7bfe21ada9a7f25b69910cd96e.bindTooltip(
+                `<div>
+                     8. Albuquerque
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_99603e7bfe21ada9a7f25b69910cd96e.setIcon(icon_ac021c9daaab78003bb068f806a846b5);
+            
+    
+            var marker_7de686fac51f222eb07ce107ef02d816 = L.marker(
+                [33.6292337, -112.3679279],
+                {
+}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var icon_eb38df6bb7b5686a554c2cd5f375ecb9 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "darkgreen",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c7117f0e946f4a22cdfbc574342c13b9 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_958c88e4065a3c45055eca31daab8f35 = $(`<div id="html_958c88e4065a3c45055eca31daab8f35" style="width: 100.0%; height: 100.0%;">                 <b>Surprise, Arizona</b><br>                 População: 123,546<br>                 Coordenadas: 33.6292, -112.3679                 </div>`)[0];
+                popup_c7117f0e946f4a22cdfbc574342c13b9.setContent(html_958c88e4065a3c45055eca31daab8f35);
+            
+        
+
+        marker_7de686fac51f222eb07ce107ef02d816.bindPopup(popup_c7117f0e946f4a22cdfbc574342c13b9)
+        ;
+
+        
+    
+    
+            marker_7de686fac51f222eb07ce107ef02d816.bindTooltip(
+                `<div>
+                     9. Surprise
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_7de686fac51f222eb07ce107ef02d816.setIcon(icon_eb38df6bb7b5686a554c2cd5f375ecb9);
+            
+    
+            var marker_d7258beebd4e2265f19f855876ea2dbf = L.marker(
+                [34.6867846, -118.1541632],
+                {
+}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var icon_381c27f9c6ab40f352616ba6c3e15632 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "cadetblue",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_787baf12ef1384ec54cf53154edb7dd2 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_52fce42df25cf85b60b734b4580d861e = $(`<div id="html_52fce42df25cf85b60b734b4580d861e" style="width: 100.0%; height: 100.0%;">                 <b>Lancaster, California</b><br>                 População: 159,523<br>                 Coordenadas: 34.6868, -118.1542                 </div>`)[0];
+                popup_787baf12ef1384ec54cf53154edb7dd2.setContent(html_52fce42df25cf85b60b734b4580d861e);
+            
+        
+
+        marker_d7258beebd4e2265f19f855876ea2dbf.bindPopup(popup_787baf12ef1384ec54cf53154edb7dd2)
+        ;
+
+        
+    
+    
+            marker_d7258beebd4e2265f19f855876ea2dbf.bindTooltip(
+                `<div>
+                     10. Lancaster
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_d7258beebd4e2265f19f855876ea2dbf.setIcon(icon_381c27f9c6ab40f352616ba6c3e15632);
+            
+    
+            var marker_9d1160e2f1b07eb5f72735b63e186214 = L.marker(
+                [37.3382082, -121.8863286],
+                {
+}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+            var icon_8065db82d727241be52662e88978d564 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "darkpurple",
+  "iconColor": "white",
+  "icon": "flag-checkered",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_4e04ec7609865752287ef31f3865d77d = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_59de81c871627782876909aa8b90e478 = $(`<div id="html_59de81c871627782876909aa8b90e478" style="width: 100.0%; height: 100.0%;">                 <b>San Jose, California</b><br>                 População: 998,537<br>                 Coordenadas: 37.3382, -121.8863                 </div>`)[0];
+                popup_4e04ec7609865752287ef31f3865d77d.setContent(html_59de81c871627782876909aa8b90e478);
+            
+        
+
+        marker_9d1160e2f1b07eb5f72735b63e186214.bindPopup(popup_4e04ec7609865752287ef31f3865d77d)
+        ;
+
+        
+    
+    
+            marker_9d1160e2f1b07eb5f72735b63e186214.bindTooltip(
+                `<div>
+                     11. San Jose
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_9d1160e2f1b07eb5f72735b63e186214.setIcon(icon_8065db82d727241be52662e88978d564);
+            
+    
+            var poly_line_65a2ee70105c2b57ebd2d9f7f167b34e = L.polyline(
+                [[40.7127837, -74.0059413], [42.1292241, -80.085059]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+        var popup_50e6de1eb55d85e3688f272f4ffc50d7 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ce4d7f2980999ae4c98bc7b4dab00d12 = $(`<div id="html_ce4d7f2980999ae4c98bc7b4dab00d12" style="width: 100.0%; height: 100.0%;">Segmento 1: New York → Erie</div>`)[0];
+                popup_50e6de1eb55d85e3688f272f4ffc50d7.setContent(html_ce4d7f2980999ae4c98bc7b4dab00d12);
+            
+        
+
+        poly_line_65a2ee70105c2b57ebd2d9f7f167b34e.bindPopup(popup_50e6de1eb55d85e3688f272f4ffc50d7)
+        ;
+
+        
+    
+    
+            poly_line_65a2ee70105c2b57ebd2d9f7f167b34e.bindTooltip(
+                `<div>
+                     De New York para Erie
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_5b5e1c7f467f96e21618723cf4a349f7 = L.polyline(
+                [[42.1292241, -80.085059], [41.6763545, -86.2519898]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+        var popup_43d2323dd9b550109b8f09351e9122da = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_84f3a79bc3ef683a269414054588dad5 = $(`<div id="html_84f3a79bc3ef683a269414054588dad5" style="width: 100.0%; height: 100.0%;">Segmento 2: Erie → South Bend</div>`)[0];
+                popup_43d2323dd9b550109b8f09351e9122da.setContent(html_84f3a79bc3ef683a269414054588dad5);
+            
+        
+
+        poly_line_5b5e1c7f467f96e21618723cf4a349f7.bindPopup(popup_43d2323dd9b550109b8f09351e9122da)
+        ;
+
+        
+    
+    
+            poly_line_5b5e1c7f467f96e21618723cf4a349f7.bindTooltip(
+                `<div>
+                     De Erie para South Bend
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_cb2687f716ced37af9bf47d82c875110 = L.polyline(
+                [[41.6763545, -86.2519898], [41.9778795, -91.6656232]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+        var popup_5a9bda13d47f999ae9463a7ae24b6706 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_cebbe0326b65a5697bdfbe0682de7c0a = $(`<div id="html_cebbe0326b65a5697bdfbe0682de7c0a" style="width: 100.0%; height: 100.0%;">Segmento 3: South Bend → Cedar Rapids</div>`)[0];
+                popup_5a9bda13d47f999ae9463a7ae24b6706.setContent(html_cebbe0326b65a5697bdfbe0682de7c0a);
+            
+        
+
+        poly_line_cb2687f716ced37af9bf47d82c875110.bindPopup(popup_5a9bda13d47f999ae9463a7ae24b6706)
+        ;
+
+        
+    
+    
+            poly_line_cb2687f716ced37af9bf47d82c875110.bindTooltip(
+                `<div>
+                     De South Bend para Cedar Rapids
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_67d479683bce10192b50ca12257f8994 = L.polyline(
+                [[41.9778795, -91.6656232], [40.8257625, -96.6851982]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+        var popup_2e18aad9b25a00da6e5a978740f9eb55 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_de5d25394f12c1444311e86c4a81880d = $(`<div id="html_de5d25394f12c1444311e86c4a81880d" style="width: 100.0%; height: 100.0%;">Segmento 4: Cedar Rapids → Lincoln</div>`)[0];
+                popup_2e18aad9b25a00da6e5a978740f9eb55.setContent(html_de5d25394f12c1444311e86c4a81880d);
+            
+        
+
+        poly_line_67d479683bce10192b50ca12257f8994.bindPopup(popup_2e18aad9b25a00da6e5a978740f9eb55)
+        ;
+
+        
+    
+    
+            poly_line_67d479683bce10192b50ca12257f8994.bindTooltip(
+                `<div>
+                     De Cedar Rapids para Lincoln
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_1df802997091d7b3ee49631b1a3f1c21 = L.polyline(
+                [[40.8257625, -96.6851982], [37.688889, -97.336111]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+        var popup_2bf74a5911edf489c650bf5d18d55b8e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_905a9acc13c8359cf4c94c5564353d96 = $(`<div id="html_905a9acc13c8359cf4c94c5564353d96" style="width: 100.0%; height: 100.0%;">Segmento 5: Lincoln → Wichita</div>`)[0];
+                popup_2bf74a5911edf489c650bf5d18d55b8e.setContent(html_905a9acc13c8359cf4c94c5564353d96);
+            
+        
+
+        poly_line_1df802997091d7b3ee49631b1a3f1c21.bindPopup(popup_2bf74a5911edf489c650bf5d18d55b8e)
+        ;
+
+        
+    
+    
+            poly_line_1df802997091d7b3ee49631b1a3f1c21.bindTooltip(
+                `<div>
+                     De Lincoln para Wichita
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_232bf0047c3476eff4fcb352b084ef7e = L.polyline(
+                [[37.688889, -97.336111], [35.2219971, -101.8312969]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+        var popup_b860efae4403d7149d03ef6708f2c2d1 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_166257a8652ce67baa7fbd3d6c971b03 = $(`<div id="html_166257a8652ce67baa7fbd3d6c971b03" style="width: 100.0%; height: 100.0%;">Segmento 6: Wichita → Amarillo</div>`)[0];
+                popup_b860efae4403d7149d03ef6708f2c2d1.setContent(html_166257a8652ce67baa7fbd3d6c971b03);
+            
+        
+
+        poly_line_232bf0047c3476eff4fcb352b084ef7e.bindPopup(popup_b860efae4403d7149d03ef6708f2c2d1)
+        ;
+
+        
+    
+    
+            poly_line_232bf0047c3476eff4fcb352b084ef7e.bindTooltip(
+                `<div>
+                     De Wichita para Amarillo
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_0377c1753f733bb3410f806c527252e5 = L.polyline(
+                [[35.2219971, -101.8312969], [35.0853336, -106.6055534]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+        var popup_400504b9356c965e38d3962ba3d0ebad = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_8ff05b6089334060c20dbaa1c8bd945f = $(`<div id="html_8ff05b6089334060c20dbaa1c8bd945f" style="width: 100.0%; height: 100.0%;">Segmento 7: Amarillo → Albuquerque</div>`)[0];
+                popup_400504b9356c965e38d3962ba3d0ebad.setContent(html_8ff05b6089334060c20dbaa1c8bd945f);
+            
+        
+
+        poly_line_0377c1753f733bb3410f806c527252e5.bindPopup(popup_400504b9356c965e38d3962ba3d0ebad)
+        ;
+
+        
+    
+    
+            poly_line_0377c1753f733bb3410f806c527252e5.bindTooltip(
+                `<div>
+                     De Amarillo para Albuquerque
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_00fb8976c35074eb1884b286ab279f0c = L.polyline(
+                [[35.0853336, -106.6055534], [33.6292337, -112.3679279]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+        var popup_872d503021455dcfbc567620c29a435d = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_b6b6cbea4c409bba1df851671103b0d9 = $(`<div id="html_b6b6cbea4c409bba1df851671103b0d9" style="width: 100.0%; height: 100.0%;">Segmento 8: Albuquerque → Surprise</div>`)[0];
+                popup_872d503021455dcfbc567620c29a435d.setContent(html_b6b6cbea4c409bba1df851671103b0d9);
+            
+        
+
+        poly_line_00fb8976c35074eb1884b286ab279f0c.bindPopup(popup_872d503021455dcfbc567620c29a435d)
+        ;
+
+        
+    
+    
+            poly_line_00fb8976c35074eb1884b286ab279f0c.bindTooltip(
+                `<div>
+                     De Albuquerque para Surprise
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_6acb0648131b7d629078ee00f0f35502 = L.polyline(
+                [[33.6292337, -112.3679279], [34.6867846, -118.1541632]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+        var popup_3192e5a0eef5dd422f52eb167198f529 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_b7e69e26f57242ee9f3b56a2a2265e9c = $(`<div id="html_b7e69e26f57242ee9f3b56a2a2265e9c" style="width: 100.0%; height: 100.0%;">Segmento 9: Surprise → Lancaster</div>`)[0];
+                popup_3192e5a0eef5dd422f52eb167198f529.setContent(html_b7e69e26f57242ee9f3b56a2a2265e9c);
+            
+        
+
+        poly_line_6acb0648131b7d629078ee00f0f35502.bindPopup(popup_3192e5a0eef5dd422f52eb167198f529)
+        ;
+
+        
+    
+    
+            poly_line_6acb0648131b7d629078ee00f0f35502.bindTooltip(
+                `<div>
+                     De Surprise para Lancaster
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_01c877016b788ed815ceecbcce9e725d = L.polyline(
+                [[34.6867846, -118.1541632], [37.3382082, -121.8863286]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+        var popup_ef4c925e19a181dc3fe9824a825a6f6b = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_920dd6761d3b55c40728027fd18db8fd = $(`<div id="html_920dd6761d3b55c40728027fd18db8fd" style="width: 100.0%; height: 100.0%;">Segmento 10: Lancaster → San Jose</div>`)[0];
+                popup_ef4c925e19a181dc3fe9824a825a6f6b.setContent(html_920dd6761d3b55c40728027fd18db8fd);
+            
+        
+
+        poly_line_01c877016b788ed815ceecbcce9e725d.bindPopup(popup_ef4c925e19a181dc3fe9824a825a6f6b)
+        ;
+
+        
+    
+    
+            poly_line_01c877016b788ed815ceecbcce9e725d.bindTooltip(
+                `<div>
+                     De Lancaster para San Jose
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            tile_layer_31a71f6eb8bd3c36b56d4c4dbc3271b6.addTo(map_cc9cab61f46504153cd2947802dbe093);
+        
+    
+                marker_0469c9eb073d47059f02bcee71cdf51f.setIcon(icon_b56f36f15b9c8e4b8007d941fb522e97);
+            
+    
+                marker_737bd18ccd247ef47d568798454d63bd.setIcon(icon_f5bd026bea7f90840516bc5e15c4f67c);
+            
+    
+                marker_b77e7ed8b83f8023cfe415e0e480f2c1.setIcon(icon_6ef769851a1c4fd26d8d77fa96276996);
+            
+    
+                marker_e9fa9db1ab07fb508f356d29b6a272d7.setIcon(icon_76f58caddf455c6c6a607e2bb294e1fc);
+            
+    
+                marker_c1b3a9326728cb20821bff6e4f39240a.setIcon(icon_97af973338a48a9aacbba6d3a1e21e91);
+            
+    
+                marker_eb1741fc30e560f8b8ea8da6af6b876f.setIcon(icon_9e39c6584ffaf497c442173767908981);
+            
+    
+                marker_582dce45b921419e52f7c5b7d24d40cd.setIcon(icon_39e281de36c27f913c4c0d8f3d2f4b12);
+            
+    
+                marker_99603e7bfe21ada9a7f25b69910cd96e.setIcon(icon_ac021c9daaab78003bb068f806a846b5);
+            
+    
+                marker_7de686fac51f222eb07ce107ef02d816.setIcon(icon_eb38df6bb7b5686a554c2cd5f375ecb9);
+            
+    
+                marker_d7258beebd4e2265f19f855876ea2dbf.setIcon(icon_381c27f9c6ab40f352616ba6c3e15632);
+            
+    
+                marker_9d1160e2f1b07eb5f72735b63e186214.setIcon(icon_8065db82d727241be52662e88978d564);
+            
+</script>
+</html>

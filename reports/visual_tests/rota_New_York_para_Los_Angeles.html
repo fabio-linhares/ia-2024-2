@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_bff1ba64e2c28627307e8a6382d9c706 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_bff1ba64e2c28627307e8a6382d9c706" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_bff1ba64e2c28627307e8a6382d9c706 = L.map(
+                "map_bff1ba64e2c28627307e8a6382d9c706",
+                {
+                    center: [39.8, -98.5],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 4,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+            L.control.scale().addTo(map_bff1ba64e2c28627307e8a6382d9c706);
+
+            
+
+        
+    
+            var tile_layer_ccc79ccb4e8352d9a93c381c4b6a6e33 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_ccc79ccb4e8352d9a93c381c4b6a6e33.addTo(map_bff1ba64e2c28627307e8a6382d9c706);
+        
+    
+            var marker_b219f92c91f78432901fa08b3e4fecd8 = L.marker(
+                [40.7128, -74.006],
+                {
+}
+            ).addTo(map_bff1ba64e2c28627307e8a6382d9c706);
+        
+    
+            var icon_289980fd74863cbbf60099e417c24c3e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "play",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_39a38a3f15a965648d71fde8f347871a = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_1ae845e1438f30d4fa648698eed89f92 = $(`<div id="html_1ae845e1438f30d4fa648698eed89f92" style="width: 100.0%; height: 100.0%;">                 <b>New York, New York</b><br>                 População: 8,336,817<br>                 Coordenadas: 40.7128, -74.0060                 </div>`)[0];
+                popup_39a38a3f15a965648d71fde8f347871a.setContent(html_1ae845e1438f30d4fa648698eed89f92);
+            
+        
+
+        marker_b219f92c91f78432901fa08b3e4fecd8.bindPopup(popup_39a38a3f15a965648d71fde8f347871a)
+        ;
+
+        
+    
+    
+            marker_b219f92c91f78432901fa08b3e4fecd8.bindTooltip(
+                `<div>
+                     1. New York
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_b219f92c91f78432901fa08b3e4fecd8.setIcon(icon_289980fd74863cbbf60099e417c24c3e);
+            
+    
+            var marker_17d0fc0505f842b8b655f9ac75945762 = L.marker(
+                [32.7767, -96.797],
+                {
+}
+            ).addTo(map_bff1ba64e2c28627307e8a6382d9c706);
+        
+    
+            var icon_769af56ea4838b8ca960c1e0e19310db = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "map-marker",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_764877d8c45e3abdfadfd0b9773b8be6 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_7f4d2dfe73869925269116425ed13e0f = $(`<div id="html_7f4d2dfe73869925269116425ed13e0f" style="width: 100.0%; height: 100.0%;">                 <b>Dallas, Texas</b><br>                 População: 1,343,573<br>                 Coordenadas: 32.7767, -96.7970                 </div>`)[0];
+                popup_764877d8c45e3abdfadfd0b9773b8be6.setContent(html_7f4d2dfe73869925269116425ed13e0f);
+            
+        
+
+        marker_17d0fc0505f842b8b655f9ac75945762.bindPopup(popup_764877d8c45e3abdfadfd0b9773b8be6)
+        ;
+
+        
+    
+    
+            marker_17d0fc0505f842b8b655f9ac75945762.bindTooltip(
+                `<div>
+                     2. Dallas
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_17d0fc0505f842b8b655f9ac75945762.setIcon(icon_769af56ea4838b8ca960c1e0e19310db);
+            
+    
+            var marker_7c6f01a25c829335b77e28f9c34dd01b = L.marker(
+                [34.0522, -118.2437],
+                {
+}
+            ).addTo(map_bff1ba64e2c28627307e8a6382d9c706);
+        
+    
+            var icon_3c556d1c5a75e6933a7a6f3082889f00 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "flag-checkered",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_53767e0f5e4558fc2d4fc87c57b0523f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_473de6f1df69711ac6540a2a171345cd = $(`<div id="html_473de6f1df69711ac6540a2a171345cd" style="width: 100.0%; height: 100.0%;">                 <b>Los Angeles, California</b><br>                 População: 3,979,576<br>                 Coordenadas: 34.0522, -118.2437                 </div>`)[0];
+                popup_53767e0f5e4558fc2d4fc87c57b0523f.setContent(html_473de6f1df69711ac6540a2a171345cd);
+            
+        
+
+        marker_7c6f01a25c829335b77e28f9c34dd01b.bindPopup(popup_53767e0f5e4558fc2d4fc87c57b0523f)
+        ;
+
+        
+    
+    
+            marker_7c6f01a25c829335b77e28f9c34dd01b.bindTooltip(
+                `<div>
+                     3. Los Angeles
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_7c6f01a25c829335b77e28f9c34dd01b.setIcon(icon_3c556d1c5a75e6933a7a6f3082889f00);
+            
+    
+            var poly_line_23f3f0bbae37d26099aed75883d16ba0 = L.polyline(
+                [[40.7128, -74.006], [32.7767, -96.797]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_bff1ba64e2c28627307e8a6382d9c706);
+        
+    
+        var popup_2d9f5b70390c38fa9dbb5f3536b698ef = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_915c89cb5ef79d11d3dc7f6d52fc4a8e = $(`<div id="html_915c89cb5ef79d11d3dc7f6d52fc4a8e" style="width: 100.0%; height: 100.0%;">Segmento 1: New York → Dallas</div>`)[0];
+                popup_2d9f5b70390c38fa9dbb5f3536b698ef.setContent(html_915c89cb5ef79d11d3dc7f6d52fc4a8e);
+            
+        
+
+        poly_line_23f3f0bbae37d26099aed75883d16ba0.bindPopup(popup_2d9f5b70390c38fa9dbb5f3536b698ef)
+        ;
+
+        
+    
+    
+            poly_line_23f3f0bbae37d26099aed75883d16ba0.bindTooltip(
+                `<div>
+                     De New York para Dallas
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_3f3d1ab52a3411efe2b5ffcc760115a5 = L.polyline(
+                [[32.7767, -96.797], [34.0522, -118.2437]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_bff1ba64e2c28627307e8a6382d9c706);
+        
+    
+        var popup_9c6238ece93a541fbe7eea64919af5e6 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_9b9a8da12cc54c4c2b48ee67fc3083ca = $(`<div id="html_9b9a8da12cc54c4c2b48ee67fc3083ca" style="width: 100.0%; height: 100.0%;">Segmento 2: Dallas → Los Angeles</div>`)[0];
+                popup_9c6238ece93a541fbe7eea64919af5e6.setContent(html_9b9a8da12cc54c4c2b48ee67fc3083ca);
+            
+        
+
+        poly_line_3f3d1ab52a3411efe2b5ffcc760115a5.bindPopup(popup_9c6238ece93a541fbe7eea64919af5e6)
+        ;
+
+        
+    
+    
+            poly_line_3f3d1ab52a3411efe2b5ffcc760115a5.bindTooltip(
+                `<div>
+                     De Dallas para Los Angeles
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            tile_layer_ccc79ccb4e8352d9a93c381c4b6a6e33.addTo(map_bff1ba64e2c28627307e8a6382d9c706);
+        
+    
+                marker_b219f92c91f78432901fa08b3e4fecd8.setIcon(icon_289980fd74863cbbf60099e417c24c3e);
+            
+    
+                marker_17d0fc0505f842b8b655f9ac75945762.setIcon(icon_769af56ea4838b8ca960c1e0e19310db);
+            
+    
+                marker_7c6f01a25c829335b77e28f9c34dd01b.setIcon(icon_3c556d1c5a75e6933a7a6f3082889f00);
+            
+</script>
+</html>
