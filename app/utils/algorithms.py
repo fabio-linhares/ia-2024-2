@@ -6,6 +6,7 @@ from collections import deque
 from functools import lru_cache
 
 import networkx as nx
+from app.utils.graph_utils import calculate_haversine_distance  # Corrigido o caminho de importação
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -76,105 +77,132 @@ def fuzzy(graph, cities_df, start, end):
     global_graph_map[graph_hash] = graph
     return fuzzy_cached(graph_hash, start, end)
 
-
+# DIJKSTRA
+####################################
 def dijkstra_search(graph, cities_df, start, end):
     """
-    Implementação otimizada do algoritmo de Dijkstra para encontrar o caminho mais curto.
-    Utiliza população como critério de desempate.
-    
+    Dijkstra bidirecional: inicia buscas simultâneas do início e do fim.
+    Ultra-eficiente para caminhos ponto-a-ponto.
+    Usa critérios plugáveis (população nos desempates) e aproveita cities_df se possível.
+
     Args:
-        graph: Grafo NetworkX com as cidades e conexões
-        cities_df: DataFrame com informações das cidades (não usado atualmente)
-        start: Cidade de origem
-        end: Cidade de destino
-        
-    Returns:
-        path: Lista de cidades no caminho mais curto
-        total_dist: Distância total do caminho
-        elapsed_time: Tempo de execução em ms
+        graph: NetworkX graph
+        cities_df: DataFrame OU dict (nome->dados) com informações relevantes da cidade
+        start: origem
+        end: destino
+
+    Return:
+        path: lista de cidades no caminho ótimo, ou None
+        total_dist: soma dos pesos das arestas do caminho
+        elapsed_time_ms: duração (ms)
     """
+
+    def get_population(n):
+        # Usar DataFrame, dict (caso cities_df seja dict) ou fallback ao grafo
+        if hasattr(cities_df, "loc"):
+            try:
+                if 'city' in cities_df.columns and 'population' in cities_df.columns:
+                    sel = cities_df.loc[cities_df['city'] == n, 'population']
+                    if not sel.empty:
+                        return int(sel.values[0])
+            except Exception:
+                pass
+        elif isinstance(cities_df, dict):
+            p = cities_df.get(n, {}).get('population')
+            if p is not None:
+                return int(p)
+        return int(graph.nodes[n].get('population', 0))
+
     start_time = time.perf_counter()
-    
     if start not in graph or end not in graph:
         return None, float('inf'), 0
-    
-    # Inicializar distâncias
-    distances = {node: float('inf') for node in graph.nodes()}
-    distances[start] = 0
-    
-    # Predecessores para reconstrução do caminho
-    predecessors = {node: None for node in graph.nodes()}
-    
-    # Conjunto de nós visitados
-    visited = set()
-    
-    # Fila de prioridade: (distância, população, contador, nó)
-    counter = 0
-    priority_queue = [(0, int(graph.nodes[start]['population']), counter, start)]
-    
-    while priority_queue:
-        # Extrair nó com menor distância
-        current_distance, _, _, current_node = heapq.heappop(priority_queue)
-        
-        # Ignorar nós já processados
-        if current_node in visited:
-            continue
-        
-        # Marcar como visitado
-        visited.add(current_node)
-        
-        # Se chegamos ao destino
-        if current_node == end:
-            elapsed_time = (time.perf_counter() - start_time) * 1000  # em ms
-            
-            # Reconstruir caminho
-            path = []
-            node = current_node
-            while node is not None:
-                path.append(node)
-                node = predecessors[node]
-            path.reverse()
-            
-            return path, distances[end], elapsed_time
-        
-        # Verificar vizinhos não visitados
-        for neighbor in graph.neighbors(current_node):
-            if neighbor in visited:
-                continue
-                
-            # Calcular nova distância
-            edge_data = graph.get_edge_data(current_node, neighbor)
-            distance = current_distance + edge_data['weight']
-            
-            # Se encontramos um caminho melhor
-            if distance < distances[neighbor]:
-                # Atualizar distância e predecessor
-                distances[neighbor] = distance
-                predecessors[neighbor] = current_node
-                
-                # Adicionar à fila de prioridade com população como critério de desempate
-                counter += 1
-                population = int(graph.nodes[neighbor]['population'])
-                heapq.heappush(priority_queue, (distance, population, counter, neighbor))
-            
-            # Se distância igual, verificar população para desempate
-            elif distance == distances[neighbor]:
-                current_pred = predecessors[neighbor]
-                if current_pred and int(graph.nodes[current_node]['population']) < int(graph.nodes[current_pred]['population']):
-                    predecessors[neighbor] = current_node
-                    # Não precisamos atualizar a distância pois é a mesma
-                    
-                    # Adicionar à fila de prioridade para garantir exploração
-                    counter += 1
-                    population = int(graph.nodes[neighbor]['population'])
-                    heapq.heappush(priority_queue, (distance, population, counter, neighbor))
-    
-    # Se não encontramos um caminho
-    return None, float('inf'), 0
 
+    # Inicialização para ambas as buscas
+    distances_start = {node: float('inf') for node in graph.nodes()}
+    distances_end = {node: float('inf') for node in graph.nodes()}
+    parents_start = {node: None for node in graph.nodes()}
+    parents_end = {node: None for node in graph.nodes()}
+
+    distances_start[start] = 0
+    distances_end[end] = 0
+
+    heap_start = [(0, get_population(start), 0, start)]
+    heap_end = [(0, get_population(end), 0, end)]
+
+    visited_start = dict()
+    visited_end = dict()
+    counter = 0
+    best_meeting = None
+    best_path_len = float('inf')
+
+    while heap_start and heap_end:
+        # Expanda pelo lado que tem menor distância somada até agora (melhor balanceamento)
+        if heap_start[0][0] + heap_end[0][0] > best_path_len:
+            break
+
+        # Expandir da origem
+        if heap_start[0][0] <= heap_end[0][0]:
+            dist, _, _, u = heapq.heappop(heap_start)
+            if u in visited_start:
+                continue
+            visited_start[u] = dist
+
+            # Checagem de encontro
+            if u in visited_end:
+                total_length = dist + visited_end[u]
+                if total_length < best_path_len:
+                    best_path_len = total_length
+                    best_meeting = u
+
+            for v in graph.neighbors(u):
+                edge_data = graph.get_edge_data(u, v)
+                weight = edge_data.get('weight', 1)
+                alt = dist + weight
+                if alt < distances_start[v]:
+                    distances_start[v] = alt
+                    parents_start[v] = u
+                    counter += 1
+                    heapq.heappush(heap_start, (alt, get_population(v), counter, v))
+
+        # Expandir do destino
+        else:
+            dist, _, _, u = heapq.heappop(heap_end)
+            if u in visited_end:
+                continue
+            visited_end[u] = dist
+
+            if u in visited_start:
+                total_length = dist + visited_start[u]
+                if total_length < best_path_len:
+                    best_path_len = total_length
+                    best_meeting = u
+
+            for v in graph.neighbors(u):
+                # Como é busca reversa, devemos considerar arestas (v, u)
+                edge_data = graph.get_edge_data(u, v)
+                weight = edge_data.get('weight', 1)
+                alt = dist + weight
+                if alt < distances_end[v]:
+                    distances_end[v] = alt
+                    parents_end[v] = u
+                    counter += 1
+                    heapq.heappush(heap_end, (alt, get_population(v), counter, v))
+
+    elapsed_time = (time.perf_counter() - start_time) * 1000
+
+    if best_meeting is None:
+        return None, float('inf'), elapsed_time
+
+    # Use suas funções auxiliares plug-and-play para reconstruir e medir caminho!
+    path = reconstruct_path(best_meeting, parents_start, parents_end)
+    total_dist = path_distance(graph, path)
+    return path, total_dist, elapsed_time
+
+# FUZZY
+####################################
 def fuzzy_search(graph, cities_df, start, end, r=None, d=None):
     """
-    Implementa busca fuzzy aprimorada que balanceia distância e confiabilidade das conexões.
+    Implementa busca fuzzy bidirecional aprimorada que balanceia distância e confiabilidade das conexões.
     Utiliza um modelo fuzzy com penalização adaptativa para conexões menos confiáveis.
     
     Args:
@@ -191,102 +219,255 @@ def fuzzy_search(graph, cities_df, start, end, r=None, d=None):
         elapsed_time: Tempo de execução em ms
         certainty: Valor de certeza da rota (percentual de confiabilidade)
     """
+    from utils.graph_utils import calculate_haversine_distance
     start_time = time.perf_counter()
     
     if start not in graph or end not in graph:
         return None, float('inf'), 0, 0.0
     
-    # Função de pertinência fuzzy
-    def membership_function(distance, max_distance):
-        if distance <= max_distance / 3:
+    # Parâmetros configuráveis para a função de pertinência fuzzy
+    fuzzy_params = {
+        'alpha': 3.0,        # Limiar para certeza máxima (max_distance/alpha)
+        'min_certainty': 0.1, # Valor mínimo de certeza
+        'decay_factor': 0.9  # Fator de decaimento na interpolação
+    }
+    
+    # Função de pertinência fuzzy parametrizada
+    def membership_function(distance, max_distance, params=fuzzy_params):
+        if distance <= max_distance / params['alpha']:
             return 1.0
         elif distance >= max_distance:
-            return 0.1
+            return params['min_certainty']
         else:
-            return 1 - (distance / max_distance) * 0.9
+            return 1.0 - (distance / max_distance) * params['decay_factor']
     
-    # Determinar a distância máxima permitida
+    # Função heurística para guiar a busca (distância Haversine até o destino)
+    def heuristic(node, target):
+        node_attrs = {'latitude': graph.nodes[node]['latitude'], 'longitude': graph.nodes[node]['longitude']}
+        target_attrs = {'latitude': graph.nodes[target]['latitude'], 'longitude': graph.nodes[target]['longitude']}
+        return calculate_haversine_distance(node_attrs, target_attrs)
+    
+    # Determinar a distância máxima permitida e tipo de distância
     if r is not None:
         max_distance = r
+        distance_type = 'angular'
     elif d is not None:
-        max_distance = d / 111  # Converter de km para graus
+        max_distance = d
+        distance_type = 'km'
     else:
-        # Usar o peso da aresta mais pesada no grafo como referência
         max_distance = max([data['weight'] for _, _, data in graph.edges(data=True)], default=10.0)
+        distance_type = 'weight'
     
-    # Inicializar estruturas de dados
-    certeza = {node: 0.0 for node in graph.nodes()}
-    certeza[start] = 1.0
+    # Normalizar para distância em graus, se necessário
+    norm_max_distance = max_distance
+    if distance_type == 'km':
+        norm_max_distance = max_distance / 111  # Aproximação km para graus
     
-    distances = {node: float('inf') for node in graph.nodes()}
-    distances[start] = 0
+    # ----- ESTRUTURAS DE DADOS PARA BUSCA BIDIRECIONAL -----
     
-    predecessors = {node: None for node in graph.nodes()}
+    # Busca da origem
+    certeza_start = {node: 0.0 for node in graph.nodes()}
+    distances_start = {node: float('inf') for node in graph.nodes()}
+    predecessors_start = {node: None for node in graph.nodes()}
+    visited_start = set()
+    certeza_start[start] = 1.0
+    distances_start[start] = 0
     
-    visited = set()
+    # Busca do destino
+    certeza_end = {node: 0.0 for node in graph.nodes()}
+    distances_end = {node: float('inf') for node in graph.nodes()}
+    predecessors_end = {node: None for node in graph.nodes()}
+    visited_end = set()
+    certeza_end[end] = 1.0
+    distances_end[end] = 0
     
-    # Fila de prioridade: (-(certeza), distância, população, contador, nó)
-    # Usamos negativo da certeza para priorizar valores maiores de certeza
+    # Filas de prioridade para ambas as buscas
+    # (-(certeza), distância + heurística, -população, contador, nó)
+    # Usando -população para priorizar cidades MENORES
     counter = 0
-    priority_queue = [(-(certeza[start]), 0, int(graph.nodes[start]['population']), counter, start)]
     
-    while priority_queue:
-        # Extrair nó com maior certeza (menor valor negativo)
-        _, current_distance, _, _, current = heapq.heappop(priority_queue)
+    # Calcular heurísticas iniciais
+    h_start = heuristic(start, end)
+    h_end = heuristic(end, start)
+    
+    pq_start = [(-(certeza_start[start]), distances_start[start] + h_start, 
+                 -(graph.nodes[start].get('population', 0)), counter, start)]
+    counter += 1
+    pq_end = [(-(certeza_end[end]), distances_end[end] + h_end, 
+               -(graph.nodes[end].get('population', 0)), counter, end)]
+    
+    # Melhor ponto de encontro e suas métricas
+    best_meeting_point = None
+    best_path_certainty = 0.0
+    best_path_length = float('inf')
+    
+    # ----- BUSCA BIDIRECIONAL -----
+    while pq_start and pq_end:
+        # Critério de parada antecipada
+        if best_meeting_point and (-pq_start[0][0]) + (-pq_end[0][0]) < best_path_certainty:
+            break
         
-        # Ignorar nós já processados
-        if current in visited:
-            continue
+        # Decidir qual lado expandir (alternando ou balanceando fronteiras)
+        expand_forward = len(visited_end) > len(visited_start)
         
-        # Marcar como visitado
-        visited.add(current)
-        
-        # Se chegamos ao destino
-        if current == end:
-            elapsed_time = (time.perf_counter() - start_time) * 1000  # em ms
+        # --- Expandir da origem ---
+        if expand_forward:
+            _, f_score, _, _, current = heapq.heappop(pq_start)
             
-            # Reconstruir caminho
-            path = []
-            node = current
-            while node is not None:
-                path.append(node)
-                node = predecessors[node]
-            path.reverse()
-            
-            # Retornar também o valor de certeza como quarto elemento
-            return path, distances[end], elapsed_time, certeza[end]
-        
-        # Verificar vizinhos não visitados
-        for neighbor in graph.neighbors(current):
-            if neighbor in visited:
+            if current in visited_start:
                 continue
                 
-            # Calcular nova distância
-            edge_data = graph.get_edge_data(current, neighbor)
-            edge_dist = edge_data['weight']
-            distance = current_distance + edge_dist
+            visited_start.add(current)
             
-            # Calcular certeza desta conexão usando lógica fuzzy
-            edge_certainty = membership_function(edge_dist, max_distance)
-            
-            # Aplicar T-norm (min) para combinar certezas
-            new_certainty = min(certeza[current], edge_certainty)
-            
-            # Se encontramos um caminho com maior certeza ou
-            # se a certeza é igual mas a distância é menor
-            if new_certainty > certeza[neighbor] or (new_certainty == certeza[neighbor] and distance < distances[neighbor]):
-                # Atualizar certeza, distância e predecessor
-                certeza[neighbor] = new_certainty
-                distances[neighbor] = distance
-                predecessors[neighbor] = current
+            # Verificar interseção com a busca reversa
+            if current in visited_end:
+                path_certainty = min(certeza_start[current], certeza_end[current])
+                total_distance = distances_start[current] + distances_end[current]
                 
-                # Adicionar à fila de prioridade
-                counter += 1
-                population = int(graph.nodes[neighbor]['population'])
-                heapq.heappush(priority_queue, (-(new_certainty), distance, population, counter, neighbor))
+                if (path_certainty > best_path_certainty or 
+                    (path_certainty == best_path_certainty and total_distance < best_path_length)):
+                    best_meeting_point = current
+                    best_path_certainty = path_certainty
+                    best_path_length = total_distance
+            
+            # Explorar vizinhos
+            for neighbor in graph.neighbors(current):
+                if neighbor in visited_start:
+                    continue
+                    
+                edge_data = graph.get_edge_data(current, neighbor)
+                edge_dist = edge_data['weight']
+                
+                # Ajustar distância conforme o tipo
+                if distance_type == 'km' and 'km_dist' in edge_data:
+                    edge_dist = edge_data['km_dist']
+                elif distance_type == 'angular' and 'angular_dist' in edge_data:
+                    edge_dist = edge_data['angular_dist']
+                
+                distance = distances_start[current] + edge_dist
+                
+                # Calcular certeza desta conexão
+                edge_certainty = membership_function(edge_dist, norm_max_distance)
+                new_certainty = min(certeza_start[current], edge_certainty)
+                
+                # Verificar se é melhor caminho
+                if (new_certainty > certeza_start[neighbor] or 
+                    (new_certainty == certeza_start[neighbor] and distance < distances_start[neighbor])):
+                    certeza_start[neighbor] = new_certainty
+                    distances_start[neighbor] = distance
+                    predecessors_start[neighbor] = current
+                    
+                    # Calcular f_score (g + h) para priorização A*
+                    h = heuristic(neighbor, end)
+                    f_score = distance + h
+                    counter += 1
+                    
+                    # Priorizar cidades com menor população
+                    population = graph.nodes[neighbor].get('population', 0)
+                    heapq.heappush(pq_start, (
+                        -(new_certainty),   # Certeza (negativa para max heap)
+                        f_score,            # Distância + heurística
+                        -population,        # Prioriza cidades menores
+                        counter,            # Desempate final
+                        neighbor
+                    ))
+        
+        # --- Expandir do destino ---
+        else:
+            _, f_score, _, _, current = heapq.heappop(pq_end)
+            
+            if current in visited_end:
+                continue
+                
+            visited_end.add(current)
+            
+            # Verificar interseção
+            if current in visited_start:
+                path_certainty = min(certeza_start[current], certeza_end[current])
+                total_distance = distances_start[current] + distances_end[current]
+                
+                if (path_certainty > best_path_certainty or 
+                    (path_certainty == best_path_certainty and total_distance < best_path_length)):
+                    best_meeting_point = current
+                    best_path_certainty = path_certainty
+                    best_path_length = total_distance
+            
+            # Busca reversa - explorar vizinhos
+            for neighbor in graph.neighbors(current):
+                if neighbor in visited_end:
+                    continue
+                    
+                edge_data = graph.get_edge_data(current, neighbor)
+                edge_dist = edge_data['weight']
+                
+                # Ajustar distância conforme o tipo
+                if distance_type == 'km' and 'km_dist' in edge_data:
+                    edge_dist = edge_data['km_dist']
+                elif distance_type == 'angular' and 'angular_dist' in edge_data:
+                    edge_dist = edge_data['angular_dist']
+                
+                distance = distances_end[current] + edge_dist
+                
+                # Calcular certeza
+                edge_certainty = membership_function(edge_dist, norm_max_distance)
+                new_certainty = min(certeza_end[current], edge_certainty)
+                
+                # Verificar se é melhor caminho
+                if (new_certainty > certeza_end[neighbor] or 
+                    (new_certainty == certeza_end[neighbor] and distance < distances_end[neighbor])):
+                    certeza_end[neighbor] = new_certainty
+                    distances_end[neighbor] = distance
+                    predecessors_end[neighbor] = current
+                    
+                    # Calcular f_score para priorização A*
+                    h = heuristic(neighbor, start)
+                    f_score = distance + h
+                    counter += 1
+                    
+                    # Priorizar cidades com menor população
+                    population = graph.nodes[neighbor].get('population', 0)
+                    heapq.heappush(pq_end, (
+                        -(new_certainty),
+                        f_score,
+                        -population,
+                        counter,
+                        neighbor
+                    ))
     
-    # Se não encontramos um caminho
-    return None, float('inf'), 0, 0.0
+    elapsed_time = (time.perf_counter() - start_time) * 1000
+    
+    # Se não encontramos um ponto de encontro
+    if best_meeting_point is None:
+        return None, float('inf'), elapsed_time, 0.0
+    
+    # Reconstruir o caminho completo a partir do ponto de encontro
+    path_start = []
+    node = best_meeting_point
+    while node is not None:
+        path_start.append(node)
+        node = predecessors_start.get(node)
+    path_start.reverse()
+    
+    path_end = []
+    node = predecessors_end.get(best_meeting_point)  # Não incluir o ponto de encontro duas vezes
+    while node is not None:
+        path_end.append(node)
+        node = predecessors_end.get(node)
+    
+    # Caminho completo: início → ponto de encontro → fim
+    path = path_start + path_end
+    
+    # Calcular distância total do caminho
+    total_dist = 0
+    for i in range(len(path) - 1):
+        edge_data = graph.get_edge_data(path[i], path[i+1])
+        if edge_data:
+            if distance_type == 'km' and 'km_dist' in edge_data:
+                total_dist += edge_data['km_dist']
+            else:
+                total_dist += edge_data['weight']
+    
+    return path, total_dist, elapsed_time, best_path_certainty
 
 # DFS
 ####################################
@@ -486,24 +667,6 @@ def breadth_first_search(graph, start, end, timeout_ms=5000, log_metrics=True):
         print("Busca finalizada sem caminho encontrado. Métricas:", info)
     return [], float('inf'), elapsed_time, info
 
-def haversine(lat1, lon1, lat2, lon2):
-    """
-    Calcula a distância Haversine entre dois pontos geográficos em km.
-    """
-    # Converter graus para radianos
-    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
-    
-    # Haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-    c = 2 * math.asin(math.sqrt(a))
-    
-    # Raio da Terra em km
-    r = 6371
-    
-    return c * r
-
 def calculate_distance_from_df(cities_df, start_city, end_city):
     """
     Calcula a distância Haversine direta entre duas cidades usando o DataFrame.
@@ -516,18 +679,12 @@ def calculate_distance_from_df(cities_df, start_city, end_city):
     Returns:
         float: Distância em km entre as cidades
     """
-    # Extrair as coordenadas das cidades
+    # Extrair as coordenadas das cidades como dicionários
     start_row = cities_df[cities_df['city'] == start_city].iloc[0]
     end_row = cities_df[cities_df['city'] == end_city].iloc[0]
     
-    # Obter latitudes e longitudes
-    lat1 = start_row['latitude']
-    lon1 = start_row['longitude']
-    lat2 = end_row['latitude']
-    lon2 = end_row['longitude']
-    
-    # Calcular a distância usando a fórmula de Haversine
-    return haversine(lat1, lon1, lat2, lon2)
+    # Usar a função importada do graph_utils
+    return calculate_haversine_distance(start_row, end_row)
 
 # A Estrela 
 ####################################
@@ -571,9 +728,10 @@ def a_star_search(
 
     # Heurística padrão (Haversine)
     def default_heuristic(n):
-        n_lat, n_lon = graph.nodes[n]['latitude'], graph.nodes[n]['longitude']
-        e_lat, e_lon = graph.nodes[end]['latitude'], graph.nodes[end]['longitude']
-        return haversine(n_lat, n_lon, e_lat, e_lon)
+        # Criar objetos com a latitude e longitude dos nós para usar com calculate_haversine_distance
+        n_attrs = {'latitude': graph.nodes[n]['latitude'], 'longitude': graph.nodes[n]['longitude']}
+        e_attrs = {'latitude': graph.nodes[end]['latitude'], 'longitude': graph.nodes[end]['longitude']}
+        return calculate_haversine_distance(n_attrs, e_attrs)
     heuristic = heuristic_fn if heuristic_fn else default_heuristic
 
     # Custo padrão enriquecido por atributos do cities_df
@@ -591,8 +749,14 @@ def a_star_search(
     def default_tiebreak(n):
         pop = graph.nodes[n].get('population', 0)
         grau = graph.degree[n]
-        return (heuristic(n), pop, -grau, hash(n))
+        return (heuristic(n), -pop, -grau, hash(n)) 
     tiebreak = tiebreak_fn if tiebreak_fn else default_tiebreak
+
+    # Alternativa usando rank e grau
+    # def default_tiebreak(n):
+    # rank = graph.nodes[n].get('rank', float('inf'))
+    # grau = graph.degree[n]
+    # return (heuristic(n), rank, -grau, hash(n))
 
     g_score = {n: float('inf') for n in graph.nodes()}
     f_score = {n: float('inf') for n in graph.nodes()}
