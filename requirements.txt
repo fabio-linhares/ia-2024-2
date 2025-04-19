@@ -13,6 +13,8 @@ tqdm
 altair
 plotly
 
+cartopy>=0.21.0
+
 # Processamento de texto (para formatação)
 markdown>=3.4.0
 
