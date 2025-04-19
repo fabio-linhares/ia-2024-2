@@ -92,7 +92,7 @@ def app():
     # Carregar dados
     try:
         with st.spinner("Carregando dados do arquivo JSON..."):
-            cities_df = data_loader.load_data(json_path)
+            cities_df, name_to_id, id_to_name = data_loader.load_data(json_path)
             
             # Dashboard no topo da página
             st.markdown("""
@@ -255,7 +255,7 @@ def app():
         end_city = city_selector.city_selector(
             "Cidade de Destino", 
             city_names, 
-            "Los Angeles" if "Los Angeles" in city_names else city_names[1]
+            "San Jose" if "San Jose" in city_names else city_names[1]
         )
         
         # Informações detalhadas sobre a cidade de destino
@@ -283,13 +283,42 @@ def app():
     
     # Configurações de desempenho
     with st.expander("🏙️ Quantidade de cidades utilizadas", expanded=False):
+        # Função para incrementar/decrementar o número de cidades
+        def increment_cities():
+            step_value = 50
+            if st.session_state.num_cities + step_value <= len(cities_df):
+                st.session_state.num_cities += step_value
+            else:
+                st.session_state.num_cities = len(cities_df)
+           
+        def decrement_cities():
+            step_value = 50
+            if st.session_state.num_cities > 50 + step_value:
+                st.session_state.num_cities -= step_value
+            else:
+                st.session_state.num_cities = 50
+        
+        # Inicializar o valor na session_state se não existir
+        if 'num_cities' not in st.session_state:
+            st.session_state.num_cities = 300
+
         numero_cidades = st.slider(
             "Número de cidades a considerar (afeta o desempenho)", 
             min_value=50, 
             max_value=len(cities_df), 
-            value=200,
+            value=st.session_state.num_cities,
+            key="num_cities",
             help="Um número menor de cidades melhora o desempenho do aplicativo"
         )
+        
+        # Adicionar botões para incrementar/decrementar (centralizados)
+        col_buttons = st.columns([1, 1, 1, 1, 1])
+        with col_buttons[1]:
+            st.button("-50", on_click=decrement_cities, use_container_width=True, key="dec_cities")
+        with col_buttons[3]:
+            st.button("+50", on_click=increment_cities, use_container_width=True, key="inc_cities")
+        st.caption("Ajuste fino do número de cidades", unsafe_allow_html=True)
+        
         cities_df = cities_df.head(numero_cidades)
         st.write(f"Usando as {numero_cidades} maiores cidades para os cálculos.")
         
@@ -468,10 +497,35 @@ def app():
           if st.session_state.link_sliders and 'd_value' in st.session_state:
              st.session_state.r_value = st.session_state.d_value / 111
        
+       # Funções para incrementar/decrementar os valores
+       def increment_r():
+           step_value = 0.1
+           st.session_state.r_value += step_value
+           update_d_from_r()
+           
+       def decrement_r():
+           step_value = 0.1
+           # Não permitir valores negativos ou abaixo de 1.0
+           if st.session_state.r_value > 1.0 + step_value:
+               st.session_state.r_value -= step_value
+               update_d_from_r()
+           
+       def increment_d():
+           step_value = 50.0
+           st.session_state.d_value += step_value
+           update_r_from_d()
+           
+       def decrement_d():
+           step_value = 50.0
+           # Não permitir valores negativos ou abaixo de 100.0
+           if st.session_state.d_value > 100.0 + step_value:
+               st.session_state.d_value -= step_value
+               update_r_from_d()
+       
        with col1:
           if connection_type in ["Raio em graus (r)", "Ambos"]:
              # Valor sugerido para o raio (1/3 da distância direta, mas no mínimo 1.0)
-             suggested_r = max(1.0, min(3.3, dist_direta / 3))
+             suggested_r = max(1.0, min(5.0, dist_direta / 3))
              
              # Inicializar o valor na session_state se não existir
              if 'r_value' not in st.session_state:
@@ -504,6 +558,14 @@ def app():
              # Converter para km para referência
              r_in_km = r * 111
              st.caption(f"Raio selecionado: {r:.1f}° ≈ {r_in_km:.0f} km")
+             
+             # Adicionar botões para incrementar/decrementar (centralizados)
+             col_buttons = st.columns([1, 1, 1, 1, 1])
+             with col_buttons[1]:
+                 st.button("-0.1°", on_click=decrement_r, use_container_width=True, key="dec_r")
+             with col_buttons[3]:
+                 st.button("+0.1°", on_click=increment_r, use_container_width=True, key="inc_r")
+             st.caption("Ajuste fino do raio", unsafe_allow_html=True)
           else:
              r = None
              
@@ -545,6 +607,15 @@ def app():
                     💡 Dica: Um bom valor inicial é aproximadamente 1/3 da distância em linha reta entre origem e destino."""
              )
              
+             # Adicionar botões para incrementar/decrementar se o slider estiver ativado
+             if not (st.session_state.link_sliders and connection_type == "Ambos"):
+                 col_buttons = st.columns([1, 1, 1, 1, 1])
+                 with col_buttons[1]:
+                     st.button("-50km", on_click=decrement_d, use_container_width=True, key="dec_d")
+                 with col_buttons[3]:
+                     st.button("+50km", on_click=increment_d, use_container_width=True, key="inc_d")
+                 st.caption("Ajuste fino da distância", unsafe_allow_html=True)
+             
              # Adicionar nota explicativa quando o slider estiver desativado
              if st.session_state.link_sliders and connection_type == "Ambos":
                 st.caption("⚠️ Slider desativado porque a sincronização está ativa. Ajuste o raio para alterar a distância.")
@@ -575,25 +646,28 @@ def app():
             
             # Construir grafo baseado no tipo de conexão selecionado
             if connection_type == "Raio em graus (r)":
-                G = graph_utils.build_graph_from_df(cities_df, r)
+                G = graph_utils.build_graph(cities_df, r=r, name_to_id=name_to_id, id_to_name=id_to_name)
                 connection_parameter = r
                 connection_unit = "graus"
             elif connection_type == "Distância em km (d)":
                 d_km = d  # Já está em km
-                G = graph_utils.build_graph_from_df_km(cities_df, d_km)
+                G = graph_utils.build_graph(cities_df, d=d_km, name_to_id=name_to_id, id_to_name=id_to_name)
                 connection_parameter = d_km
                 connection_unit = "km"
             else:  # Ambos
-                G = graph_utils.build_graph(cities_df, r=r, d=d)
+                G = graph_utils.build_graph(cities_df, r=r, d=d, name_to_id=name_to_id, id_to_name=id_to_name)
                 connection_parameter = f"{r} graus / {d} km"
                 connection_unit = "mistos"
             
             # Verificar se as cidades estão no grafo
-            if start_city not in G.nodes or end_city not in G.nodes:
+            start_city_id = name_to_id.get(start_city)
+            end_city_id = name_to_id.get(end_city)
+            
+            if start_city_id is None or end_city_id is None or start_city_id not in G.nodes or end_city_id not in G.nodes:
                 error_msg = "Uma ou ambas as cidades selecionadas não estão no grafo. "
-                if start_city not in G.nodes:
+                if start_city_id is None or start_city_id not in G.nodes:
                     error_msg += f"'{start_city}' está isolada. "
-                if end_city not in G.nodes:
+                if end_city_id is None or end_city_id not in G.nodes:
                     error_msg += f"'{end_city}' está isolada. "
                 error_msg += f"Tente aumentar o valor do raio de conexão para incluir mais cidades."
                 st.error(error_msg)
@@ -605,7 +679,7 @@ def app():
             status_text.text("Verificando conectividade...")
             
             # Verificar se existe um caminho entre as cidades
-            if not nx.has_path(G, start_city, end_city):
+            if not nx.has_path(G, start_city_id, end_city_id):
                 st.warning(f"Não existe caminho entre {start_city} e {end_city} com o raio de conexão atual ({connection_parameter} {connection_unit}). Tente aumentar o valor do raio.")
                 
                 # Sugerir um valor de r adequado
@@ -614,9 +688,9 @@ def app():
                 end_component = None
                 
                 for i, comp in enumerate(components):
-                    if start_city in comp:
+                    if start_city_id in comp:
                         start_component = i
-                    if end_city in comp:
+                    if end_city_id in comp:
                         end_component = i
                 
                 if start_component is not None and end_component is not None and start_component != end_component:
@@ -640,36 +714,56 @@ def app():
             # Execução dos algoritmos selecionados
             results = {}
             
+            # Converter nomes de cidades para IDs para usar nos algoritmos
+            start_id = name_to_id.get(start_city)
+            end_id = name_to_id.get(end_city)
+            
+            # Helper para converter caminhos de IDs para nomes
+            def convert_path_to_names(path_ids):
+                return [id_to_name.get(node_id, f"ID:{node_id}") for node_id in path_ids]
+            
             # Usar diretamente os checkboxes da session_state para determinar quais algoritmos executar
             if st.session_state.use_bfs:
                 status_text.text("Executando BFS...")
-                bfs_result = algorithms.bfs_search(G, cities_df, start_city, end_city)
-                if bfs_result is not None:
-                    results["BFS"] = bfs_result
+                bfs_result = algorithms.bfs_search(G, cities_df, start_id, end_id)
+                if bfs_result and len(bfs_result) >= 2:
+                    # Substituir IDs por nomes no caminho retornado
+                    path_ids = bfs_result[0]
+                    path_names = convert_path_to_names(path_ids)
+                    # Criar novo resultado com nomes em vez de IDs
+                    results["BFS"] = (path_names,) + bfs_result[1:]
                 
             if st.session_state.use_dfs:
                 status_text.text("Executando DFS...")
-                dfs_result = algorithms.dfs_search(G, cities_df, start_city, end_city)
-                if dfs_result is not None:
-                    results["DFS"] = dfs_result
+                dfs_result = algorithms.dfs_search(G, cities_df, start_id, end_id)
+                if dfs_result and len(dfs_result) >= 2:
+                    path_ids = dfs_result[0]
+                    path_names = convert_path_to_names(path_ids)
+                    results["DFS"] = (path_names,) + dfs_result[1:]
                 
             if st.session_state.use_astar:
                 status_text.text("Executando A*...")
-                a_star_result = algorithms.a_star_search(G, cities_df, start_city, end_city)
-                if a_star_result is not None:
-                    results["A*"] = a_star_result
+                a_star_result = algorithms.a_star_search(G, cities_df, start_id, end_id)
+                if a_star_result and len(a_star_result) >= 2:
+                    path_ids = a_star_result[0]
+                    path_names = convert_path_to_names(path_ids)
+                    results["A*"] = (path_names,) + a_star_result[1:]
                 
             if st.session_state.use_fuzzy:
                 status_text.text("Executando Busca Fuzzy...")
-                fuzzy_result = algorithms.fuzzy_search(G, cities_df, start_city, end_city)
-                if fuzzy_result is not None:
-                    results["Fuzzy"] = fuzzy_result
+                fuzzy_result = algorithms.fuzzy_search(G, cities_df, start_id, end_id)
+                if fuzzy_result and len(fuzzy_result) >= 2:
+                    path_ids = fuzzy_result[0]
+                    path_names = convert_path_to_names(path_ids)
+                    results["Fuzzy"] = (path_names,) + fuzzy_result[1:]
                 
             if st.session_state.use_dijkstra:
                 status_text.text("Executando Dijkstra...")
-                dijkstra_result = algorithms.dijkstra_search(G, cities_df, start_city, end_city)
-                if dijkstra_result is not None:
-                    results["Dijkstra"] = dijkstra_result
+                dijkstra_result = algorithms.dijkstra_search(G, cities_df, start_id, end_id)
+                if dijkstra_result and len(dijkstra_result) >= 2:
+                    path_ids = dijkstra_result[0]
+                    path_names = convert_path_to_names(path_ids)
+                    results["Dijkstra"] = (path_names,) + dijkstra_result[1:]
             
             # Verificar se algum algoritmo conseguiu encontrar um caminho
             if not results:
