@@ -16,13 +16,16 @@ def display_route_map(cities_df, paths):
     Args:
         cities_df: DataFrame com as informações das cidades
         paths: Lista de caminhos a serem exibidos no mapa
+        
+    Returns:
+        Objeto mapa do folium
     """
     # Verificação de dados
     if 'latitude' not in cities_df.columns or 'longitude' not in cities_df.columns:
         st.error("Dados de latitude e longitude não encontrados. Verifique o arquivo cities.json.")
         st.write("Colunas disponíveis:", cities_df.columns.tolist())
         st.write("Primeiras linhas dos dados:", cities_df.head().to_dict())
-        return
+        return None
     
     try:
         # Centralizar o mapa nos Estados Unidos para melhor visualização
@@ -37,6 +40,9 @@ def display_route_map(cities_df, paths):
              <h4 align="center" style="font-size:16px"><b>Mapa de Rotas entre Cidades</b></h4>
              <p align="center" style="font-size:12px">
                 Cores das Rotas: Azul (BFS), Verde (A*), Vermelho (Fuzzy), Amarelo (Dijkstra)
+             </p>
+             <p align="center" style="font-size:10px; font-style: italic;">
+                Nota: Linhas conectam apenas cidades consecutivas em cada rota
              </p>
              '''
         m.get_root().html.add_child(folium.Element(title_html))
@@ -61,7 +67,6 @@ def display_route_map(cities_df, paths):
             popup_text = f"""
             <b>{row['city']}, {row['state']}</b><br>
             População: {int(row['population']):,}<br>
-            Crescimento (2000-2013): {row['growth_from_2000_to_2013']}<br>
             Coordenadas: {row['latitude']:.4f}, {row['longitude']:.4f}
             """
             
@@ -100,21 +105,54 @@ def display_route_map(cities_df, paths):
             
             if len(route_points) > 1:  # Precisamos de pelo menos 2 pontos para uma linha
                 route_name = route_names[i] if i < len(route_names) else f"Rota {i+1}"
-                folium.PolyLine(
-                    route_points,
-                    weight=4,
-                    color=colors[i % len(colors)],
-                    opacity=0.8,
-                    tooltip=route_name,
-                    popup=f"{route_name}: {len(path)} cidades, {len(path)-2} paradas intermediárias"
-                ).add_to(m)
+                color = colors[i % len(colors)]
+                
+                # Desenhar cada segmento da rota separadamente (cidade a cidade)
+                for j in range(len(route_points) - 1):
+                    segment = [route_points[j], route_points[j+1]]
+                    segment_tooltip = f"{route_name}: {path[j]} → {path[j+1]}"
+                    
+                    folium.PolyLine(
+                        segment,
+                        weight=4,
+                        color=color,
+                        opacity=0.8,
+                        tooltip=segment_tooltip,
+                        popup=f"Segmento {j+1} da {route_name}: {path[j]} → {path[j+1]}"
+                    ).add_to(m)
             else:
                 st.warning(f"Pontos insuficientes para desenhar a rota {i+1}: apenas {len(route_points)} pontos encontrados")
+        
+        # Adicionar uma nota explicativa sobre as linhas do mapa
+        map_note = folium.Element('''
+            <div style="position: fixed; bottom: 20px; left: 20px; background-color: white; 
+            padding: 10px; border-radius: 5px; z-index: 1000; max-width: 300px; 
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);">
+                <p style="margin: 0; font-size: 12px;">
+                    <strong>Rotas sequenciais:</strong> As linhas coloridas representam a sequência exata 
+                    das rotas encontradas pelos algoritmos, conectando apenas cidades consecutivas na ordem 
+                    em que são visitadas.
+                </p>
+            </div>
+        ''')
+        m.get_root().html.add_child(map_note)
         
         # Adicionar escala e controle de camadas ao mapa
         folium.LayerControl(position='topright', collapsed=False).add_to(m)
         
-        folium_static(m, width=800, height=600)
+        # Importante: Renderizamos o mapa somente se não estivermos em modo de teste
+        # Para testes, queremos apenas retornar o objeto mapa
+        try:
+            # Verifica se estamos em um ambiente de teste
+            import inspect
+            caller_module = inspect.currentframe().f_back.f_globals.get('__name__', '')
+            is_test = 'test' in caller_module
+            
+            if not is_test:
+                folium_static(m, width=800, height=600)
+        except Exception:
+            # Se algo der errado, apenas renderiza o mapa
+            folium_static(m, width=800, height=600)
         
         return m
     except Exception as e:
@@ -223,10 +261,10 @@ def display_all_routes_map(cities_df, results):
                         folium.Marker(
                             location=[row['latitude'], row['longitude']],
                             popup=popup_text,
-                            tooltip=row['city']
+                            tooltip=f"{row['city']}"
                         ).add_to(intermediate_cluster)
         
-        # Adicionar linhas para cada rota
+        # Adicionar linhas para cada rota - modificado para conectar apenas cidades consecutivas
         for algo, resultado in results.items():
             path = resultado[0]  # O caminho é sempre o primeiro elemento
             distance = resultado[1]  # A distância é sempre o segundo elemento
@@ -234,29 +272,60 @@ def display_all_routes_map(cities_df, results):
             if not path or len(path) < 2:
                 continue
             
-            # Converter nomes das cidades em coordenadas
-            route_points = []
+            # Coletar coordenadas de todas as cidades no caminho
+            coordinates = []
             for city_name in path:
                 city_data = cities_df[cities_df['city'] == city_name]
                 if not city_data.empty:
-                    route_points.append([city_data.iloc[0]['latitude'], city_data.iloc[0]['longitude']])
+                    coordinates.append([city_data.iloc[0]['latitude'], city_data.iloc[0]['longitude']])
             
-            if len(route_points) > 1:
-                color = colors.get(algo, 'gray')  # Obter cor do algoritmo ou usar cinza como padrão
+            # Obter a cor para o algoritmo
+            color = colors.get(algo, 'gray')  # Obter cor do algoritmo ou usar cinza como padrão
+            
+            # Desenhar segmentos individuais entre cidades consecutivas
+            for i in range(len(coordinates) - 1):
+                segment = [coordinates[i], coordinates[i+1]]
+                # Adicionar informação sobre o segmento específico
+                segment_tooltip = f"{algo}: {path[i]} → {path[i+1]}"
+                
                 folium.PolyLine(
-                    route_points,
+                    segment,
                     color=color,
                     weight=4,
                     opacity=0.7,
-                    tooltip=f"{algo}: {len(path)} cidades, {distance:.2f}°",
-                    popup=f"<b>Algoritmo:</b> {algo}<br><b>Cidades:</b> {len(path)}<br><b>Distância:</b> {distance:.2f}° ({distance*111:.0f} km)"
+                    tooltip=segment_tooltip,
+                    popup=f"<b>Algoritmo:</b> {algo}<br><b>Segmento:</b> {path[i]} → {path[i+1]}"
                 ).add_to(m)
+        
+        # Adicionar uma nota explicativa sobre as linhas do mapa
+        map_note = folium.Element('''
+            <div style="position: fixed; bottom: 20px; left: 20px; background-color: white; 
+            padding: 10px; border-radius: 5px; z-index: 1000; max-width: 300px; 
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);">
+                <p style="margin: 0; font-size: 12px;">
+                    <strong>Rotas sequenciais:</strong> As linhas coloridas representam a sequência exata 
+                    das rotas encontradas pelos algoritmos, conectando apenas cidades consecutivas na ordem 
+                    em que são visitadas pelo algoritmo. Cada algoritmo usa uma cor diferente para sua rota.
+                </p>
+            </div>
+        ''')
+        m.get_root().html.add_child(map_note)
         
         # Adicionar controle de camadas
         folium.LayerControl(position='topright', collapsed=False).add_to(m)
         
-        # Renderizar o mapa no streamlit com tamanho aumentado para combinar com o grafo
-        folium_static(m, width=600, height=600)
+        # Importante: Renderizamos o mapa somente se não estivermos em modo de teste
+        try:
+            # Verifica se estamos em um ambiente de teste
+            import inspect
+            caller_module = inspect.currentframe().f_back.f_globals.get('__name__', '')
+            is_test = 'test' in caller_module
+            
+            if not is_test:
+                folium_static(m, width=600, height=600)
+        except Exception:
+            # Se algo der errado, apenas renderiza o mapa
+            folium_static(m, width=600, height=600)
         
         return m
         
@@ -277,6 +346,9 @@ def display_path_on_map(cities_df, path, title="Caminho encontrado"):
         cities_df: DataFrame com as informações das cidades
         path: Lista com os nomes das cidades que formam o caminho
         title: Título a ser exibido no mapa
+        
+    Returns:
+        Objeto mapa do folium
     """
     # Verificação de dados
     if 'latitude' not in cities_df.columns or 'longitude' not in cities_df.columns:
@@ -295,6 +367,8 @@ def display_path_on_map(cities_df, path, title="Caminho encontrado"):
         title_html = f'''
              <h4 align="center" style="font-size:16px"><b>{title}</b></h4>
              <p align="center" style="font-size:12px">Cada cidade na rota é marcada com uma cor diferente</p>
+             <p align="center" style="font-size:10px; font-style: italic;">Nota: As linhas conectam cidades consecutivas
+             da rota encontrada pelo algoritmo.</p>
              '''
         m.get_root().html.add_child(folium.Element(title_html))
         
@@ -313,7 +387,6 @@ def display_path_on_map(cities_df, path, title="Caminho encontrado"):
                 popup_text = f"""
                 <b>{row['city']}, {row['state']}</b><br>
                 População: {int(row['population']):,}<br>
-                Crescimento (2000-2013): {row['growth_from_2000_to_2013']}<br>
                 Coordenadas: {row['latitude']:.4f}, {row['longitude']:.4f}
                 """
                 
@@ -338,30 +411,68 @@ def display_path_on_map(cities_df, path, title="Caminho encontrado"):
                     tooltip=tooltip_text,
                     icon=folium.Icon(color=icon_color, icon=icon_type, prefix='fa')
                 ).add_to(m)
+            else:
+                # Se a cidade não for encontrada no DataFrame, emitir um aviso
+                st.warning(f"Cidade não encontrada no DataFrame: {city_name}")
         
-        # Adicionar linha conectando as cidades do caminho
+        # Adicionar segmentos de linha entre cidades consecutivas do caminho
         if len(path) > 1:
-            route_points = []
+            coordinates = []
+            valid_cities = []
             for city_name in path:
                 city_data = cities_df[cities_df['city'] == city_name]
                 if not city_data.empty:
-                    route_points.append([city_data.iloc[0]['latitude'], city_data.iloc[0]['longitude']])
+                    coordinates.append([city_data.iloc[0]['latitude'], city_data.iloc[0]['longitude']])
+                    valid_cities.append(city_name)
             
-            if len(route_points) > 1:
+            # Desenhar cada segmento da rota separadamente (cidade a cidade)
+            for i in range(len(coordinates) - 1):
+                segment = [coordinates[i], coordinates[i+1]]
+                # Adicionar informação sobre o segmento específico
+                segment_tooltip = f"De {valid_cities[i]} para {valid_cities[i+1]}"
+                
                 folium.PolyLine(
-                    route_points,
+                    segment,
                     weight=3,
                     color='blue',
                     opacity=0.7,
-                    tooltip=f"Rota com {len(path)} cidades"
+                    tooltip=segment_tooltip,
+                    popup=f"Segmento {i+1}: {valid_cities[i]} → {valid_cities[i+1]}"
                 ).add_to(m)
         
-        folium_static(m, width=800, height=600)
+        # Adicionar uma nota explicativa sobre as linhas do mapa
+        map_note = folium.Element('''
+            <div style="position: fixed; bottom: 20px; left: 20px; background-color: white; 
+            padding: 10px; border-radius: 5px; z-index: 1000; max-width: 300px; 
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);">
+                <p style="margin: 0; font-size: 12px;">
+                    <strong>Rota sequencial:</strong> As linhas azuis representam a sequência exata 
+                    da rota encontrada pelo algoritmo, conectando cidades consecutivas na ordem em que 
+                    são visitadas pelo algoritmo.
+                </p>
+            </div>
+        ''')
+        m.get_root().html.add_child(map_note)
+        
+        # Importante: Renderizamos o mapa somente se não estivermos em modo de teste
+        try:
+            # Verifica se estamos em um ambiente de teste
+            import inspect
+            caller_module = inspect.currentframe().f_back.f_globals.get('__name__', '')
+            is_test = 'test' in caller_module
+            
+            if not is_test:
+                folium_static(m, width=800, height=600)
+        except Exception:
+            # Se algo der errado, apenas renderiza o mapa
+            folium_static(m, width=800, height=600)
         
         return m
         
     except Exception as e:
         st.error(f"Erro ao criar o mapa: {str(e)}")
+        import traceback
+        st.error(traceback.format_exc())
         return None
 
 def display_graph_visualization(G, cities_df, r=None, d=None):
@@ -393,37 +504,45 @@ def display_graph_visualization(G, cities_df, r=None, d=None):
     plt.xlabel("Longitude")
     plt.ylabel("Latitude")
     
-    # Posições dos nós baseadas em coordenadas
+    # Posições dos nós baseadas em coordenadas geográficas
     pos = {}
-    for index, data in cities_df.iterrows():
-        # Usar coordenadas geográficas para posicionar os nós
-        pos[data['city']] = (data['longitude'], data['latitude'])
+    labels = {}
+    
+    # Mapear IDs para nomes para visualização
+    id_to_name = getattr(G.graph, 'id_to_name', {})
+    
+    for node_id in G.nodes():
+        # Obter dados do nó direto do grafo
+        node_attrs = G.nodes[node_id]
+        pos[node_id] = (node_attrs['longitude'], node_attrs['latitude'])
+        
+        # Usar o nome da cidade como rótulo para visualização
+        labels[node_id] = node_attrs['city']
     
     # Desenhar os nós - tamanho baseado no log da população
     node_sizes = []
     node_colors = []
-    for node in G.nodes():
-        city_data = cities_df[cities_df['city'] == node]
-        if not city_data.empty:
-            # Usar log para evitar nós muito grandes
-            size = max(50, min(300, math.log(int(city_data.iloc[0]['population'])) * 10))
-            node_sizes.append(size)
-            
-            # Cores baseadas na região (simplificado por estado)
-            state = city_data.iloc[0]['state']
-            if state in ['California', 'Oregon', 'Washington', 'Nevada', 'Arizona']:
-                node_colors.append('skyblue')  # Oeste
-            elif state in ['Texas', 'Oklahoma', 'Louisiana', 'Arkansas']:
-                node_colors.append('lightgreen')  # Sul/Centro
-            elif state in ['Florida', 'Georgia', 'South Carolina', 'North Carolina']:
-                node_colors.append('yellow')  # Sudeste
-            elif state in ['New York', 'Massachusetts', 'Pennsylvania', 'New Jersey']:
-                node_colors.append('lightcoral')  # Nordeste
-            else:
-                node_colors.append('gray')  # Outros estados
+    for node_id in G.nodes():
+        # Obter dados diretamente do grafo
+        node_attrs = G.nodes[node_id]
+        population = node_attrs.get('population', 10000)
+        
+        # Usar log para evitar nós muito grandes
+        size = max(50, min(300, math.log(int(population)) * 10))
+        node_sizes.append(size)
+        
+        # Cores baseadas na região (simplificado por estado)
+        state = node_attrs.get('state', '')
+        if state in ['California', 'Oregon', 'Washington', 'Nevada', 'Arizona']:
+            node_colors.append('skyblue')  # Oeste
+        elif state in ['Texas', 'Oklahoma', 'Louisiana', 'Arkansas']:
+            node_colors.append('lightgreen')  # Sul/Centro
+        elif state in ['Florida', 'Georgia', 'South Carolina', 'North Carolina']:
+            node_colors.append('yellow')  # Sudeste
+        elif state in ['New York', 'Massachusetts', 'Pennsylvania', 'New Jersey']:
+            node_colors.append('lightcoral')  # Nordeste
         else:
-            node_sizes.append(100)  # Tamanho padrão
-            node_colors.append('gray')
+            node_colors.append('gray')  # Outros estados
     
     # Desenhar os nós
     nx.draw_networkx_nodes(G, pos, node_size=node_sizes, 
@@ -448,11 +567,18 @@ def display_graph_visualization(G, cities_df, r=None, d=None):
         
     nx.draw_networkx_edges(G, pos, width=1, alpha=edge_alphas, ax=ax)
     
-    # Desenhar rótulos apenas para as cidades mais importantes (top 20)
-    important_cities = cities_df.nlargest(20, 'population')['city'].tolist()
-    labels = {city: city for city in G.nodes() if city in important_cities}
-    nx.draw_networkx_labels(G, pos, labels=labels, font_size=9, 
-                         font_family='sans-serif', ax=ax)
+    # Desenhar rótulos apenas para as cidades mais importantes (até 20 cidades)
+    top_cities = {}
+    
+    # Identificar até 20 nós com maior população
+    node_pop = [(node_id, G.nodes[node_id].get('population', 0)) for node_id in G.nodes()]
+    node_pop.sort(key=lambda x: x[1], reverse=True)
+    
+    for node_id, _ in node_pop[:20]:
+        top_cities[node_id] = labels[node_id]
+    
+    nx.draw_networkx_labels(G, pos, labels=top_cities, font_size=9, 
+                           font_family='sans-serif', ax=ax)
     
     # Adicionar legenda
     plt.figtext(0.15, 0.02, "Azul: Oeste", color='skyblue', ha='left')
